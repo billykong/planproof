@@ -1,0 +1,12 @@
+# Go
+/bin/
+*.test
+*.out
+coverage.*
+
+# Python
+__pycache__/
+*.pyc
+
+# Local results and scratch
+/tmp/

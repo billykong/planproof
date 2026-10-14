@@ -1,0 +1,61 @@
+# 04 - Roadmap
+
+## Sequencing
+
+```mermaid
+flowchart LR
+  S["Phase 0: PRD and spec"] --> K["Phase 1: Kernel and renderer"]
+  K --> C["Phase 2: Fetcher, executor, fidelity tests"]
+  K --> E["Phase 3: Agent loop and evals"]
+  C --> E
+  E --> M["Phase 4: Measure against safe-ops and with reviewers"]
+  K -. stretch .-> L["Phase 5: Lean model of the kernel"]
+```
+
+| Phase | Scope | Exit criteria |
+| --- | --- | --- |
+| 0 | This PRD, the [spec](../spec/README.md), the worked example | The example's expected verdicts and packets are written by hand and agree with the spec |
+| 1 | Kernel, renderer, CLI (K, R areas) | The worked example passes as golden tests; size, dependency and coverage budgets enforced in CI; every rule has an accept and a reject test |
+| 2 | Fetcher, executor, model-fidelity tests on kind (C area) | Each operation's predicted state matches kind; the executor stops on drift and on a wait timeout; translation check passes |
+| 3 | Agent loop and evals (E area) | A model writes plans for the seeded tasks and repairs them from Refuted facts; Proved / Refuted / Unknown rates reported |
+| 4 | Measurement | Seeded bad plans through both planproof and the `safe-ops` gate; reviewer study, packet vs raw plan; results published |
+| 5 | Stretch: Lean 4 model of the semantics, a soundness proof for the checker, and differential tests between the Go kernel and the Lean model | Proof checks in CI; differential tests run on every PR |
+
+## Milestones
+
+### Phase 0
+1. PRD (this folder).
+2. Spec: plan, snapshot and model, operations, rules and policy, verdict, review packet, glossary.
+3. Worked example: [examples/drain-two-nodes](../../examples/drain-two-nodes/): one Proved plan and one Refuted plan, with expected packets.
+
+### Phase 1
+1. Go module, CI: build, vet, test, size budget, import check.
+2. Strict parsing and hashing for all three inputs; fuzz targets.
+3. The model and the seven operations; the rules; the verdict.
+4. Renderer, word list, template linter; golden packets for the examples.
+5. CLI.
+
+### Phase 2
+1. Fetcher, tested against fixtures applied to kind.
+2. Executor, with runtime guards and an RBAC test.
+3. Model-fidelity tests: each operation and each example plan run on kind, observed states compared with predictions.
+4. Translation check against the API audit log.
+
+### Phase 3
+1. Seeded task set (node-pool drain with tight budgets, image rollout under capacity limits, scale with a ceiling).
+2. Agent loop with a real model, with and without kernel feedback.
+3. Seeded bad plans, including intent-versus-effect mismatches.
+
+### Phase 4
+1. Head-to-head with the `safe-ops-agent-k8s` OPA gate on the same seeded plans.
+2. Reviewer study.
+3. Blog post.
+
+## Open questions
+
+| Question | Options | Leaning |
+| --- | --- | --- |
+| Plan input format | JSON only; YAML converted in the CLI | JSON in the kernel, YAML accepted by the CLI |
+| Where do rolled-out pods land? | Model placement; worst case over candidate nodes | Worst case for budgets, first-fit for capacity (spec 02) |
+| Should the kernel propose repairs? | No, facts only; or suggested fixes | Facts only; repair is the agent's job |
+| Second platform after Kubernetes | Terraform plans; none | Decide after phase 4 |

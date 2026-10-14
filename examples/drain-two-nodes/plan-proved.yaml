@@ -1,0 +1,23 @@
+# Expected: Proved, approval required. Packet: packet-proved.txt
+apiVersion: planproof/v0
+kind: Plan
+metadata:
+  name: drain-two-nodes
+  ticket: "OPS-1042: upgrade nodes n1 and n2"
+snapshot: sha256:01d582c7f8de56cb623e5534474d6438c5ccaddd0f698cefadd4a691e777b625
+rationale: "Cordon both nodes first, so pods moved off n1 cannot land on n2."
+goal:
+  - {node: n1, field: unschedulable, from: false, to: true}
+  - {node: n2, field: unschedulable, from: false, to: true}
+  - {node: n1, field: drained, from: false, to: true}
+  - {node: n2, field: drained, from: false, to: true}
+steps:
+  - {op: cordon, node: n1, pre: {unschedulable: false}}
+  - {op: cordon, node: n2, pre: {unschedulable: false}}
+  - {op: drain, node: n1}
+  - {op: wait, deployments: [shop/checkout, shop/cart], timeoutSeconds: 300}
+  - {op: drain, node: n2}
+  - {op: wait, deployments: [shop/checkout, shop/cart], timeoutSeconds: 300}
+rollback:
+  - {op: uncordon, node: n2}
+  - {op: uncordon, node: n1}

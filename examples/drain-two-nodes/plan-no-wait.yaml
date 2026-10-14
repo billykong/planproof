@@ -1,0 +1,20 @@
+# Expected: Refuted at step 4 (budget, never-zero). Packet: packet-no-wait.txt
+# Same goal as plan-proved.yaml, but it drains n2 before the pods moved off n1 are ready.
+apiVersion: planproof/v0
+kind: Plan
+metadata:
+  name: drain-two-nodes-no-wait
+  ticket: "OPS-1042: upgrade nodes n1 and n2"
+snapshot: sha256:01d582c7f8de56cb623e5534474d6438c5ccaddd0f698cefadd4a691e777b625
+rationale: "Drain both nodes, then wait once at the end to save time."
+goal:
+  - {node: n1, field: unschedulable, from: false, to: true}
+  - {node: n2, field: unschedulable, from: false, to: true}
+  - {node: n1, field: drained, from: false, to: true}
+  - {node: n2, field: drained, from: false, to: true}
+steps:
+  - {op: cordon, node: n1}
+  - {op: cordon, node: n2}
+  - {op: drain, node: n1}
+  - {op: drain, node: n2}
+  - {op: wait, deployments: [shop/checkout, shop/cart], timeoutSeconds: 300}

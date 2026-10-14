@@ -1,0 +1,67 @@
+PLAN CHECK: drain-n1
+Plan sha256:<plan>. Snapshot sha256:01d582c7f8de. Policy sha256:<policy>. Kernel 0.1.0.
+
+CAUTION: DO NOT APPROVE THIS PLAN.
+The plan makes a change that the goal does not list.
+The number of `shop/cart` pods changes from 2 to 3.
+
+1. GOAL
+   1. Stop new pods on node `n1`.
+   2. Move all pods off node `n1`.
+   The plan must change nothing else.
+
+2. RESULT
+   REFUTED. The plan breaks 1 rule after the last step. Do not run this plan.
+
+3. CHECKS DONE
+   1. Input files: PASS.
+      The plan, snapshot and policy are complete and match.
+   2. Plan scope: PASS.
+      The plan names only managed nodes and deployments.
+   3. Protected deployments: PASS.
+      The plan names no protected deployment.
+   4. Limits: PASS.
+      At most 1 node stops new pods at the same time. The limit is 2.
+      At least 3 nodes accept new pods at all times. The limit is 2.
+   5. Step checks: PASS.
+      The 1 step check is true.
+   6. Stop new pods before you move pods: PASS.
+      Each node stops new pods before the plan moves pods off it.
+   7. Pods with no owner: PASS.
+      No step removes a pod that has no owner.
+   8. Disruption budgets: PASS.
+      The lowest number of ready `shop/cart` pods is 1, during step 2. The budget needs at least 1.
+      The lowest number of ready `shop/checkout` pods is 2, during step 2. The budget needs at least 2.
+      The number of ready `shop/payments` pods stays at 2. The budget needs at least 1.
+   9. At least 1 ready pod: PASS.
+      Each deployment keeps at least 1 ready pod.
+   10. Space on nodes: PASS.
+      Node `n2` has the least free space after step 4: 2150 millicores of CPU and 6336 MiB of memory.
+   11. All pods ready at the end: PASS.
+      The plan ends with all pods ready.
+   12. Only the goal changes: FAIL.
+      The plan makes a change that the goal does not list.
+      The number of `shop/cart` pods changes from 2 to 3.
+   13. Rollback: NOT APPLICABLE. The plan has no rollback.
+
+4. NOT CHECKED
+   The kernel does not check that this goal is the correct goal for the request. You must check this.
+   A1. The kernel thinks that pods that are ready now stay ready. Before each step, the runner examines the cluster again.
+   A2. The kernel does not check that new pods start. Steps 3 and 5 wait for them. If a wait takes too long, the runner stops the plan.
+   A3. The kernel uses a simple model of the scheduler. The scheduler can put pods on different nodes.
+   A4. The kernel thinks that nothing else changes these objects during the plan. If an object changes, the runner stops.
+   A5. The kernel thinks that the snapshot is correct.
+   The agent wrote this text. The kernel did not check it.
+   Ticket: "OPS-1043: upgrade node n1"
+   Reason from the agent: "Drain n1 for the upgrade. Also add a cart pod for extra room."
+
+5. PROCEDURE
+   1. Stop new pods on node `n1`.
+      First, the runner makes sure that node `n1` accepts new pods.
+   2. Move all pods off node `n1`.
+   3. Wait until `shop/checkout` and `shop/cart` are ready. Stop the plan if this takes more than 5 minutes.
+   4. Change the number of `shop/cart` pods to 3.
+   5. Wait until `shop/cart` is ready. Stop the plan if this takes more than 5 minutes.
+
+6. ROLLBACK
+   None. The plan has no rollback.

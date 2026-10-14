@@ -1,0 +1,19 @@
+# Expected: Refuted after the last step (frame). Packet: packet-extra-change.txt
+# Every step keeps the rules, but the plan also scales cart, which its goal doesn't list:
+# the intent-versus-effect mismatch that per-change rules miss.
+apiVersion: planproof/v0
+kind: Plan
+metadata:
+  name: drain-n1
+  ticket: "OPS-1043: upgrade node n1"
+snapshot: sha256:01d582c7f8de56cb623e5534474d6438c5ccaddd0f698cefadd4a691e777b625
+rationale: "Drain n1 for the upgrade. Also add a cart pod for extra room."
+goal:
+  - {node: n1, field: unschedulable, from: false, to: true}
+  - {node: n1, field: drained, from: false, to: true}
+steps:
+  - {op: cordon, node: n1, pre: {unschedulable: false}}
+  - {op: drain, node: n1}
+  - {op: wait, deployments: [shop/checkout, shop/cart], timeoutSeconds: 300}
+  - {op: scale, deployment: shop/cart, replicas: 3}
+  - {op: wait, deployments: [shop/cart], timeoutSeconds: 300}
