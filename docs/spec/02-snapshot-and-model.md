@@ -39,7 +39,7 @@ Written by the fetcher, a trusted component with a read-only identity. The agent
 | `nodes[].taints` | The node has a `NoSchedule` or `NoExecute` taint, other than the `unschedulable` taint a cordon adds |
 | `deployments[].strategy` | `type` is `RollingUpdate` or `Recreate`; `maxUnavailable` and `maxSurge` resolved to integers against `replicas` (unavailable rounded down, surge rounded up, as Kubernetes does) |
 | `deployments[].podRequests` | Sum of the pod template's container requests, rounded up; `pods: 1` |
-| `…placementRules` | The pod (template) has a `nodeSelector`, node or pod affinity or anti-affinity, topology spread constraints, or a toleration other than the defaults Kubernetes adds |
+| `…placementRules` | The pod (template) has a hard placement constraint the model doesn't evaluate: a `nodeSelector` that some node doesn't satisfy; required node affinity; required pod affinity or anti-affinity; a topology spread constraint with `whenUnsatisfiable: DoNotSchedule`; or tolerations that cover every hard taint of some tainted node (so it could land outside its candidates). Soft preferences (preferred affinity, `ScheduleAnyway` spreads, `PreferNoSchedule` taints) are not placement rules: they change where a pod lands, never whether it can, and the model already assumes the worst about where pods land |
 | `deployments[].hpa` | A HorizontalPodAutoscaler (or KEDA ScaledObject) targets it |
 | `pods[].owner` | Resolved through ReplicaSets: `{kind: Deployment\|DaemonSet\|StatefulSet\|Job\|Other\|None, name}` |
 | `pods[].localStorage` | The pod mounts an `emptyDir` volume |
@@ -69,7 +69,7 @@ The kernel turns the snapshot into a state and changes that state step by step. 
 
 **Available(d)** is the number of pods of deployment `d` that are `ready`, at the state in question. While `d` is mid rolling update, available(d) is `max(0, replicas − maxUnavailable)`, the floor Kubernetes keeps during a rollout (0 for `Recreate`).
 
-**Candidate nodes.** When the model creates a pod (eviction, rolling update, scale up), the pod's candidate set is the set of nodes that are `ready`, not `unschedulable` and not tainted, at that moment. The model never guesses where the scheduler put it.
+**Candidate nodes.** When the model creates a pod (eviction, rolling update, scale up), the pod's candidate set is the set of nodes that are `ready`, not `unschedulable` and not tainted, at that moment. The model never guesses where the scheduler put it. Leaving tainted nodes out is exact for pods that don't tolerate their taints, since the scheduler can't put them there; pods that do tolerate them have `placementRules: true` and make the plan Unknown when they must be placed. (Until 2026-10-16 a separate `tainted-nodes` trigger made every placement Unknown whenever any schedulable node was tainted; on a real cluster that is every placement, because the control plane is tainted.)
 
 **Worst case for disruption.** When a step disrupts a node, every pod that *might* be on it (a known node equal to it, or a candidate set containing it) is treated as being on it. This keeps budget checks sound without modelling the scheduler. The simplest way to make it exact is to cordon every node you will drain before the first drain, so moved pods can't be candidates for those nodes.
 
@@ -96,7 +96,6 @@ The kernel returns Unknown, naming the trigger, whenever the plan depends on som
 | `hpa` | A deployment the plan depends on has an autoscaler |
 | `pdb-unresolved` | A PDB the plan depends on has `unresolved` set, or two PDBs cover one deployment |
 | `placement-rules` | A pod the model must place has `placementRules: true` |
-| `tainted-nodes` | A pod must be placed and some node is `ready`, not `unschedulable`, but tainted |
 | `stateful-owner` | A node the plan drains has a pod owned by a StatefulSet, Job or `Other` |
 | `local-storage` | A node the plan drains has a pod with `localStorage: true` |
 | `node-not-ready` | A node the plan names is not `ready` |

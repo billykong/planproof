@@ -2,7 +2,7 @@
 
 **Goal:** connect the kernel to a real cluster without widening what you must trust: a read-only fetcher that writes the snapshot, an executor that runs only Proved plans and stops on any surprise, and tests that compare the kernel's model with what Kubernetes actually does. Covers goal G5.
 
-Status: **Planned**. Runs on kind (4 workers) on WSL2.
+Status: **In progress**: phase 2 milestone 1 (fetcher) done. Runs on kind (1 control plane, 4 workers, about 2 CPUs and 3 GiB allocatable each) on WSL2: `make kind-up`, then `make kind-test`. The kind tests don't run in CI yet.
 
 ## User stories
 
@@ -16,9 +16,9 @@ Status: **Planned**. Runs on kind (4 workers) on WSL2.
 
 | ID | Requirement | Priority | Status |
 | --- | --- | --- | --- |
-| C-01 | The fetcher writes a snapshot in the [spec 02](../../spec/02-snapshot-and-model.md#the-snapshot) format, resolving owners, quantities, strategies, PDB selectors, autoscalers and placement rules. | Must | Planned |
-| C-02 | Its identity can only `get`/`list` the objects it reads (tested with `kubectl auth can-i`). | Must | Planned |
-| C-03 | Fixture tests: known manifests applied to kind give a known snapshot (ignoring `resourceVersion` and times). | Must | Planned |
+| C-01 | The fetcher writes a snapshot in the [spec 02](../../spec/02-snapshot-and-model.md#the-snapshot) format, resolving owners, quantities, strategies, PDB selectors, autoscalers and placement rules. | Must | **Done**: `fetch` and `cmd/planproof-fetch`; `TestSnapshot` (fake clientset: rounding, effective requests, owner chains, skipped pods, budgets resolved and unresolved, autoscalers, taints, hard vs soft placement rules; the kernel parses the result) |
+| C-02 | Its identity can only `get`/`list` the objects it reads (tested with `kubectl auth can-i`). | Must | **Done**: `TestFetcherRBAC` (SubjectAccessReviews, 6 allowed and 8 denied, on kind); `TestFetchFixture` fetches with the fetcher's own identity |
+| C-03 | Fixture tests: known manifests applied to kind give a known snapshot (ignoring `resourceVersion` and times). | Must | **Done**: `TestFetchFixture` on kind (pause-image deployments, budgets, an HPA; checked field by field, since pod placement varies) |
 
 ### Executor
 

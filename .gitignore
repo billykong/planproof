@@ -10,3 +10,6 @@ __pycache__/
 
 # Local results and scratch
 /tmp/
+
+# The lab cluster's own kubeconfig: never ~/.kube/config
+/.kube/

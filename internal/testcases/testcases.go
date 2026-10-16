@@ -271,7 +271,13 @@ rollback: [{op: wait, deployments: [shop/cart], timeoutSeconds: 60}]
 		m["pdbs"] = append(m["pdbs"].([]any), map[string]any{"namespace": "shop", "name": "cart-2", "deployment": "cart", "minAvailable": 1})
 	}, Plan: drainN1, Want: "Unknown", Trigger: "pdb-unresolved"},
 	{Name: "unknown: placement-rules", Snap: func(m map[string]any) { Named(m, "pods", "cart-a")["placementRules"] = true }, Plan: drainN1, Want: "Unknown", Trigger: "placement-rules"},
-	{Name: "unknown: tainted-nodes", Snap: func(m map[string]any) { Named(m, "nodes", "n4")["taints"] = true }, Plan: drainN1, Want: "Unknown", Trigger: "tainted-nodes"},
+	{Name: "accept: a tainted node no pod tolerates is just not a candidate", Snap: func(m map[string]any) { Named(m, "nodes", "n4")["taints"] = true }, Plan: drainN1, Want: "Proved"},
+	{Name: "capacity: a tainted node adds no room", Snap: func(m map[string]any) {
+		Named(m, "nodes", "n4")["taints"] = true
+		for _, n := range []string{"n2", "n3"} {
+			Named(m, "nodes", n)["allocatable"].(map[string]any)["cpuMilli"] = 900
+		}
+	}, Plan: drainN1, Want: "Refuted", Rule: "capacity"},
 	{Name: "unknown: stateful-owner", Snap: func(m map[string]any) { AddPod(m, "db-0", "n1", "StatefulSet", "db") }, Plan: drainN1, Want: "Unknown", Trigger: "stateful-owner"},
 	{Name: "unknown: local-storage", Snap: func(m map[string]any) { Named(m, "pods", "cart-a")["localStorage"] = true }, Plan: drainN1, Want: "Unknown", Trigger: "local-storage"},
 	{Name: "unknown: node-not-ready", Snap: func(m map[string]any) { Named(m, "nodes", "n1")["ready"] = false }, Plan: drainN1, Want: "Unknown", Trigger: "node-not-ready"},

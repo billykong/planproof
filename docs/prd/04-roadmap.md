@@ -36,7 +36,7 @@ flowchart LR
 5. **Done.** CLI (`cmd/planproof`, strict YAML conversion in `internal/yamljson`); `make examples` runs it end to end; kernel coverage enforced at 95% (`make cover`).
 
 ### Phase 2
-1. Fetcher, tested against fixtures applied to kind.
+1. **Done.** Fetcher, tested against fixtures applied to kind (`make kind-test`).
 2. Executor, with runtime guards and an RBAC test.
 3. Model-fidelity tests: each operation and each example plan run on kind, observed states compared with predictions.
 4. Translation check against the API audit log.

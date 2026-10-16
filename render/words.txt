@@ -191,8 +191,6 @@ stop
 stopped
 stops
 sure
-taint
-taints
 take
 takes
 text

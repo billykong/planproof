@@ -1,0 +1,43 @@
+# The fetcher's identity (C-02): read-only, and only the kinds the snapshot
+# needs. No Secrets, no ConfigMaps, no writes, no impersonation.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: planproof
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: fetcher
+  namespace: planproof
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: planproof-fetcher
+rules:
+- apiGroups: [""]
+  resources: [nodes, pods]
+  verbs: [get, list]
+- apiGroups: [apps]
+  resources: [deployments, replicasets]
+  verbs: [get, list]
+- apiGroups: [policy]
+  resources: [poddisruptionbudgets]
+  verbs: [get, list]
+- apiGroups: [autoscaling]
+  resources: [horizontalpodautoscalers]
+  verbs: [get, list]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: planproof-fetcher
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: planproof-fetcher
+subjects:
+- kind: ServiceAccount
+  name: fetcher
+  namespace: planproof

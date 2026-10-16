@@ -25,7 +25,7 @@ This folder is the product requirements document (PRD): what we're building, why
 | K Kernel | **Phase 1 milestones 1-3 done**: budgets and CI; strict parsing and fuzzing; model, operations, rules and verdict, with golden examples. Open: K-25, K-26 |
 | R Review packet | **Phase 1 milestone 4 done**: renderer, word list, template lint, golden packets. Open: R-09, R-11 |
 | T CLI | **Done**: `check`, `render`, `hash`; strict YAML conversion. Open: an automated check for T-07 |
-| C Cluster | Planned |
+| C Cluster | **In progress**: fetcher done (phase 2 milestone 1) |
 | E Agent and evals | Planned |
 
 ## Conventions

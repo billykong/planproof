@@ -119,7 +119,6 @@ func (r *run) trigger(s Step) (string, string) {
 	}
 	switch s.Op {
 	case "drain":
-		moved := false
 		for _, p := range st.pods {
 			if !p.mightBeOn(s.Node) || p.owner == "DaemonSet" || p.owner == "None" {
 				continue
@@ -134,10 +133,6 @@ func (r *run) trigger(s Step) (string, string) {
 			case p.placement:
 				return "placement-rules", "deployment/" + p.dep
 			}
-			moved = true
-		}
-		if n := st.taintedNode(); moved && n != "" {
-			return "tainted-nodes", "node/" + n
 		}
 	case "scale", "set-image", "rollout-restart":
 		if t := r.depTrigger(s.Deployment); t != "" {
@@ -149,9 +144,6 @@ func (r *run) trigger(s Step) (string, string) {
 		}
 		if d.placement {
 			return "placement-rules", "deployment/" + s.Deployment
-		}
-		if n := st.taintedNode(); n != "" {
-			return "tainted-nodes", "node/" + n
 		}
 	}
 	return "", ""
@@ -367,20 +359,6 @@ func (r *run) assert(ref StepRef, s Step, a *Assertions, phase string) {
 			check("node/"+s.Node, "podsOnNode", *a.PodsOnNode, count)
 		}
 	}
-}
-
-func (st *state) taintedNode() string {
-	var names []string
-	for name, n := range st.nodes {
-		if n.ready && !n.unsched && n.taints {
-			names = append(names, name)
-		}
-	}
-	slices.Sort(names)
-	if len(names) == 0 {
-		return ""
-	}
-	return names[0]
 }
 
 // field is one desired field of one object, as in a goal change.

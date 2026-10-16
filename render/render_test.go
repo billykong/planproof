@@ -88,7 +88,8 @@ func TestDeterministic(t *testing.T) {
 // whatever the verdict (R-04).
 func TestNoBannedWords(t *testing.T) {
 	for _, v := range allVerdicts(t) {
-		text := strings.ToLower(Packet(v))
+		// Names are code, data from the cluster or the agent: the rule is for prose.
+		text := codeSpan.ReplaceAllString(strings.ToLower(Packet(v)), "")
 		for _, w := range banned {
 			if regexp.MustCompile(`\b` + w + `\b`).MatchString(text) {
 				t.Fatalf("%s: packet says %q", v.PlanName, w)

@@ -28,7 +28,7 @@ The packet follows the principles of ASD-STE100 (Simplified Technical English), 
 Always in this order. Sections with nothing to show still appear, with "None."
 
 ```text
-PLAN CHECK: <plan name>
+PLAN CHECK: `<plan name>`
 Plan <hash>. Snapshot <hash>. Policy <hash>. Kernel <version>.
 
 [CAUTION block, for Refuted or Unknown only]
@@ -41,7 +41,7 @@ Plan <hash>. Snapshot <hash>. Policy <hash>. Kernel <version>.
 6. ROLLBACK        the rollback steps, and what it does not undo
 ```
 
-The CAUTION block comes first because STE puts a safety instruction before the text it applies to. Hashes show the first 12 hex characters.
+The CAUTION block comes first because STE puts a safety instruction before the text it applies to. The plan name is the agent's, so it is shown in code font like every name (W7): an identifier, not a claim. A name like `verified-safe-drain` can't put "safe" into the prose. Hashes show the first 12 hex characters.
 
 ## Templates
 
@@ -156,7 +156,6 @@ DO NOT APPROVE IT WITHOUT A FULL REVIEW BY A PERSON.
 | `hpa` | Step {s} affects `{d}`. An autoscaler controls `{d}`, and the kernel does not model autoscalers. |
 | `pdb-unresolved` | Step {s} affects `{d}`. The kernel cannot read the disruption budget for `{d}`. |
 | `placement-rules` | Step {s} makes new `{d}` pods. These pods have placement rules, and the kernel does not model them. |
-| `tainted-nodes` | Step {s} makes new pods. Node `{n}` has a taint, and the kernel does not model taints. |
 | `stateful-owner` | Step {s} moves pod `{p}`. The kernel does not model the owner of this pod. |
 | `local-storage` | Step {s} moves pod `{p}`. This pod has local data, and the data does not move with it. |
 | `node-not-ready` | Step {s} names node `{n}`. Node `{n}` is not ready. |

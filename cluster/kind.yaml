@@ -1,0 +1,19 @@
+# The planproof lab cluster: 1 control plane and 4 workers, like the
+# drain-two-nodes example. Each node reserves most of the host for the
+# "system", so a worker's allocatable is about 2 CPUs and 3 GiB: small
+# enough that the capacity tests mean something.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: planproof
+kubeadmConfigPatches:
+- |
+  kind: KubeletConfiguration
+  systemReserved:
+    cpu: "6"
+    memory: "12Gi"
+nodes:
+- role: control-plane
+- role: worker
+- role: worker
+- role: worker
+- role: worker

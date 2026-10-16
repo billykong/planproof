@@ -23,6 +23,13 @@ bin/planproof check --snapshot examples/drain-two-nodes/snapshot.json --plan exa
 make ci        # gofmt, vet, tests, kernel budgets and coverage, the examples end to end, 30 s of fuzzing
 ```
 
+The fetcher and the cluster tests need a kind cluster. It gets its own kubeconfig in `.kube/`, so nothing touches `~/.kube/config` or another cluster:
+
+```bash
+make kind-up     # 1 control plane + 4 workers, and the components' RBAC
+make kind-test   # fetcher permissions both ways; fixtures to snapshot
+```
+
 ## Example
 
 The kernel's answer to a plan that drains two nodes without waiting in between ([full packet](examples/drain-two-nodes/packet-no-wait.txt)):

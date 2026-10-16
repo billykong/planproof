@@ -78,7 +78,9 @@ Not trusted: the agent, the model behind it, the plan's free text, and any serve
 | `internal/testcases/` | The table of plans the kernel and renderer tests share |
 | `cmd/planproof/` | CLI: `check`, `render`, `hash` |
 | `internal/yamljson/` | Strict YAML-to-JSON conversion for plans and policies, outside the kernel |
-| `fetch/`, `exec/` | Fetcher and executor (client-go) |
+| `fetch/`, `cmd/planproof-fetch/` | Fetcher (client-go), a separate command with its own read-only identity |
+| `exec/` | Executor (planned) |
+| `cluster/`, `deploy/rbac/`, `test/kind/` | The kind lab cluster, the components' RBAC, and the tests that need the cluster |
 | `docs/prd/`, `docs/spec/` | This PRD; the normative spec |
 | `examples/` | Worked examples with snapshot, policy, plans and expected packets |
 | `tests/fidelity/` | Model-fidelity tests on kind |

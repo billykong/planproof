@@ -1,4 +1,4 @@
-PLAN CHECK: drain-two-nodes
+PLAN CHECK: `drain-two-nodes`
 Plan sha256:290f90c50533. Snapshot sha256:01d582c7f8de. Policy sha256:7df1f0660a8b. Kernel 0.1.0.
 
 1. GOAL

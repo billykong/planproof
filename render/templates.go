@@ -127,7 +127,6 @@ var templates = map[string]string{
 	"unknown.hpa":                "{Step} affects {d}. An autoscaler controls {d}, and the kernel does not model autoscalers.",
 	"unknown.pdb-unresolved":     "{Step} affects {d}. The kernel cannot read the disruption budget for {d}.",
 	"unknown.placement-rules":    "{Step} makes new {d} pods. These pods have placement rules, and the kernel does not model them.",
-	"unknown.tainted-nodes":      "{Step} makes new pods. Node {n} has a taint, and the kernel does not model taints.",
 	"unknown.stateful-owner":     "{Step} moves pod {p}. The kernel does not model the owner of this pod.",
 	"unknown.local-storage":      "{Step} moves pod {p}. This pod has local data, and the data does not move with it.",
 	"unknown.node-not-ready":     "{Step} names node {n}. Node {n} is not ready.",

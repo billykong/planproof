@@ -194,8 +194,9 @@ func unchecked(s string) string {
 
 func build(v kernel.Verdict) *packet {
 	p := &packet{v: v}
-	name := v.PlanName
-	if name == "" {
+	// The name is the agent's: shown as code, an identifier, never prose (W7).
+	name := code(v.PlanName)
+	if v.PlanName == "" {
 		name = "(the kernel cannot read the inputs)"
 	}
 	short := func(h string) string { h = strings.TrimPrefix(h, "sha256:"); return h[:min(12, len(h))] }

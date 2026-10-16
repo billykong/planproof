@@ -1,4 +1,4 @@
-PLAN CHECK: drain-n1
+PLAN CHECK: `drain-n1`
 Plan sha256:8b2293a3d895. Snapshot sha256:01d582c7f8de. Policy sha256:7df1f0660a8b. Kernel 0.1.0.
 
 CAUTION: DO NOT APPROVE THIS PLAN.

@@ -15,7 +15,7 @@ The model's simplifications are deliberate. Every one is on the conservative sid
 Parameters: `deployment`, `replicas` (integer ≥ 0). Let `r` be the current replicas and `n` the new value.
 
 - **Requires**: none beyond the static rules.
-- **Unknown if**: `hpa`, `overlapping-change`, `unsettled-start`; if `n > r`: `placement-rules`, `tainted-nodes`.
+- **Unknown if**: `hpa`, `overlapping-change`, `unsettled-start`; if `n > r`: `placement-rules`.
 - **During** = **After**:
   - `replicas := n`.
   - If `n > r`: `n − r` new `pending` pods, candidate set = schedulable nodes, placed by first fit. If any doesn't fit, rule `capacity` fails.
@@ -27,7 +27,7 @@ Parameters: `deployment`, `replicas` (integer ≥ 0). Let `r` be the current rep
 Parameters: `deployment`, `container`, `image`.
 
 - **Requires**: the container exists in the deployment; if the policy sets `requireImageDigest`, `image` contains `@sha256:`.
-- **Unknown if**: `hpa`, `overlapping-change`, `unsettled-start`, `placement-rules`, `tainted-nodes`.
+- **Unknown if**: `hpa`, `overlapping-change`, `unsettled-start`, `placement-rules`.
 - **During**: the deployment is mid rolling update. Available(d) is `replicas − maxUnavailable` (0 for `Recreate`). `maxSurge` extra pods must fit by first fit, on top of the existing pods; if not, rule `capacity` fails. (For `Recreate`, no surge.)
 - **After**: `image[container] := image`. The deployment stays mid rolling update until a `wait` names it. Its pods are `rolling`, candidate set = schedulable nodes. For capacity, the old pods' requests are released and the new pods are placed by first fit.
 - **Assumes**: A2, A3.
@@ -53,7 +53,7 @@ Parameters: `node`. **During** = **After**: `unschedulable := false`. Unknown if
 Parameters: `node`. Models `kubectl drain --ignore-daemonsets` through the Eviction API.
 
 - **Requires**: the node is `unschedulable` (rule `cordon-first`); no pod on the node has `owner.kind: None` (rule `no-orphans`).
-- **Unknown if**: `node-not-ready`, `stateful-owner`, `local-storage`, `overlapping-change` (a deployment with pods on the node is mid rolling update); and, for the moved pods, `placement-rules`, `tainted-nodes`, `hpa`, `pdb-unresolved`.
+- **Unknown if**: `node-not-ready`, `stateful-owner`, `local-storage`, `overlapping-change` (a deployment with pods on the node is mid rolling update); and, for the moved pods, `placement-rules`, `hpa`, `pdb-unresolved`.
 - **Moved pods**: every deployment pod that might be on the node: its known node is this node, or its candidate set contains this node (worst case). DaemonSet pods stay.
 - **During**: all moved pods are gone at once (not available). This is the worst case: the Eviction API may move them one at a time, but the model doesn't rely on it.
 - **After**: moved pods are `pending`, candidate set = schedulable nodes (this node is cordoned, so never included), placed by first fit; if any doesn't fit, rule `capacity` fails. `drained := true`. `podsOnNode` for this node is 0.
