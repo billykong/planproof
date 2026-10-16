@@ -27,7 +27,8 @@ The fetcher and the cluster tests need a kind cluster. It gets its own kubeconfi
 
 ```bash
 make kind-up     # 1 control plane + 4 workers, and the components' RBAC
-make kind-test   # fetcher permissions both ways; fixtures to snapshot
+make kind-test   # fetcher and executor on the cluster: permissions both ways, a real drain,
+                 # and every way a run must stop (drift, conflict, live assertion, timeout)
 ```
 
 ## Example

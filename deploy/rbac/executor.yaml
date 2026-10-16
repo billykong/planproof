@@ -1,0 +1,53 @@
+# The executor's identity (C-16): the only one that writes, and only what
+# the seven operations need. Patch, never update, delete or create, except
+# evictions, which go through the Eviction API so the cluster's own
+# disruption budgets still apply (C-14). Plus the reads its drift check and
+# live assertions need.
+#
+# RBAC can't limit which fields a patch touches: this role can patch any
+# field of a node or deployment. Known gap; see docs/known-gaps.md (GAP-01).
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: executor
+  namespace: planproof
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: planproof-executor
+rules:
+- apiGroups: [""]
+  resources: [nodes]
+  verbs: [get, list, patch]
+- apiGroups: [""]
+  resources: [pods]
+  verbs: [get, list]
+- apiGroups: [""]
+  resources: [pods/eviction]
+  verbs: [create]
+- apiGroups: [apps]
+  resources: [deployments]
+  verbs: [get, list, patch]
+- apiGroups: [apps]
+  resources: [replicasets]
+  verbs: [get, list]
+- apiGroups: [policy]
+  resources: [poddisruptionbudgets]
+  verbs: [get, list]
+- apiGroups: [autoscaling]
+  resources: [horizontalpodautoscalers]
+  verbs: [get, list]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: planproof-executor
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: planproof-executor
+subjects:
+- kind: ServiceAccount
+  name: executor
+  namespace: planproof

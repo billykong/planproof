@@ -10,6 +10,7 @@ import (
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
 	policyv1 "k8s.io/api/policy/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -72,7 +73,15 @@ func fixture(t *testing.T, c *kubernetes.Clientset, ns string, objs ...any) {
 	if _, err := c.CoreV1().Namespaces().Create(cx, &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: ns}}, metav1.CreateOptions{}); err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { c.CoreV1().Namespaces().Delete(ctx(t), ns, metav1.DeleteOptions{}) })
+	t.Cleanup(func() {
+		// Wait until it's gone, so its pods can't leak into the next test's snapshot.
+		cx := context.Background()
+		c.CoreV1().Namespaces().Delete(cx, ns, metav1.DeleteOptions{})
+		wait.PollUntilContextTimeout(cx, time.Second, 2*time.Minute, true, func(cx context.Context) (bool, error) {
+			_, err := c.CoreV1().Namespaces().Get(cx, ns, metav1.GetOptions{})
+			return apierrors.IsNotFound(err), nil
+		})
+	})
 	var deps []string
 	for _, o := range objs {
 		var err error
