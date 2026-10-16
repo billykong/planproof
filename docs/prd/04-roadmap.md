@@ -32,7 +32,7 @@ flowchart LR
 1. **Done.** Go module, CI: build, vet, test, size budget, import check (`make ci`).
 2. **Done.** Strict parsing and hashing for all three inputs; fuzz target (`TestInputRejected`, `FuzzCheck`).
 3. **Done.** The model and the seven operations; the rules; the verdict (`TestOperations`, `TestRules`, `TestExamples`).
-4. Renderer, word list, template linter; golden packets for the examples.
+4. **Done.** Renderer, word list, template linter; golden packets for the examples (`go test ./render`).
 5. CLI.
 
 ### Phase 2

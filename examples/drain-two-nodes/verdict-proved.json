@@ -1,6 +1,7 @@
 {
   "apiVersion": "planproof/v0",
   "kind": "Verdict",
+  "planName": "drain-two-nodes",
   "result": "Proved",
   "kernelVersion": "0.1.0",
   "planSha256": "sha256:290f90c50533b06bd92aefbef0821babe8bfebe128ae8792a8e58819a75427d2",
@@ -271,7 +272,12 @@
       "reasons": [
         "drain",
         "critical"
-      ]
+      ],
+      "evidence": {
+        "critical": [
+          "shop/checkout"
+        ]
+      }
     },
     {
       "type": "unchecked-text",

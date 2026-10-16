@@ -74,7 +74,8 @@ Not trusted: the agent, the model behind it, the plan's free text, and any serve
 | Path | Purpose |
 | --- | --- |
 | `kernel/` | The kernel: types, parser, model, rules, verdict. Standard library only |
-| `render/` | The review packet renderer and its templates |
+| `render/` | The review packet renderer, its templates and word list |
+| `internal/testcases/` | The table of plans the kernel and renderer tests share |
 | `cmd/planproof/` | CLI: `check`, `render`, `hash`; YAML is converted to JSON here, outside the kernel |
 | `fetch/`, `exec/` | Fetcher and executor (client-go) |
 | `docs/prd/`, `docs/spec/` | This PRD; the normative spec |

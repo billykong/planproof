@@ -6,7 +6,7 @@ An agent writes a plan (a goal and the steps to reach it). The kernel checks the
 
 The idea comes from proof assistants such as Lean: let the clever, untrusted part search, and trust only a checker small enough to read. Don't review the agent's plan; review the checker once, and the goal each time.
 
-Kubernetes first. Status: **phase 1**. The kernel works: it checks plans against the model and rules, and its verdicts on the worked examples match the ones derived by hand. The review-packet renderer and the CLI are next. See the [PRD status](docs/prd/README.md#status-at-a-glance).
+Kubernetes first. Status: **phase 1**. The kernel checks plans against the model and rules, and the renderer turns its verdicts into review packets; on the worked examples both match what was derived by hand before the code existed. The CLI is next. See the [PRD status](docs/prd/README.md#status-at-a-glance).
 
 ## Build and test
 

@@ -25,6 +25,7 @@ The kernel stops at the first failing step: the model after a failure isn't mean
 {
   "apiVersion": "planproof/v0",
   "kind": "Verdict",
+  "planName": "drain-two-nodes-no-wait",
   "result": "Refuted",
   "kernelVersion": "0.1.0",
   "planSha256": "sha256:…",
@@ -35,7 +36,7 @@ The kernel stops at the first failing step: the model after a failure isn't mean
 }
 ```
 
-`result` is `Proved`, `Refuted` or `Unknown`. `approvalRequired` is meaningful only for Proved. The executor runs nothing unless `result` is `Proved` and all three hashes and the kernel version match what it was given.
+`planName` is the plan's `metadata.name` (empty when the inputs can't be read). `result` is `Proved`, `Refuted` or `Unknown`. `approvalRequired` is meaningful only for Proved. The executor runs nothing unless `result` is `Proved` and all three hashes and the kernel version match what it was given.
 
 ## Facts
 
@@ -51,7 +52,7 @@ The facts are everything the kernel found, as typed records. The renderer turns 
 | `failure` | `rule`, `step` (0 static, `end`, or an index; `rollback:<index>` for rollback steps), `phase` (`static`, `pre`, `during`, `after`, `end`), `evidence` | Each failing rule (Refuted) |
 | `unknown` | `trigger`, `step`, `object` | Unknown |
 | `assumption` | `id`, `steps` | A1, A4 and A5 always; A2 and A3 when a step creates pods, with `steps` naming those steps (up to where the check stopped) |
-| `approval` | `required`, `reasons` | Proved |
+| `approval` | `required`, `reasons`; with reason `critical`, `evidence.critical` lists the critical deployments involved | Proved |
 | `unchecked-text` | `field` (`ticket`, `rationale`), `text` | Each free-text field present |
 
 ### Evidence

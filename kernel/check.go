@@ -38,6 +38,7 @@ func Check(snapshot, plan, policy []byte) Verdict {
 		})
 		return v
 	}
+	v.PlanName = in.plan.Metadata.Name
 	r := newRun(in)
 	stage, at, restored := r.execute()
 	switch {
@@ -52,7 +53,11 @@ func Check(snapshot, plan, policy []byte) Verdict {
 	if v.Result == Proved {
 		reasons := r.approvalReasons()
 		v.ApprovalRequired = len(reasons) > 0
-		v.Facts = append(v.Facts, Fact{Type: "approval", Required: &v.ApprovalRequired, Reasons: reasons})
+		approval := Fact{Type: "approval", Required: &v.ApprovalRequired, Reasons: reasons}
+		if critical := r.criticalInvolved(); slices.Contains(reasons, "critical") {
+			approval.Evidence = map[string]any{"critical": critical}
+		}
+		v.Facts = append(v.Facts, approval)
 	}
 	for _, t := range []struct {
 		field string
@@ -242,16 +247,8 @@ func (r *run) evidence(rule string, restored int) map[string]any {
 // approvalReasons lists the policy's approval conditions this plan meets,
 // in the policy's order (spec 04).
 func (r *run) approvalReasons() []string {
-	plan, pol := &r.in.plan, &r.in.policy
-	named := map[string]bool{}
-	for _, c := range plan.Goal {
-		named[c.Deployment] = true
-	}
-	for _, s := range plan.Steps {
-		named[s.Deployment] = true
-	}
-	critical := slices.ContainsFunc(pol.CriticalDeployments, func(d string) bool { return named[d] || r.disrupted[d] })
-	met := map[string]bool{"always": true, "drain": r.drains, "critical": critical, "scale-down": r.scaleDown, "image": r.setsImage}
+	pol := &r.in.policy
+	met := map[string]bool{"always": true, "drain": r.drains, "critical": len(r.criticalInvolved()) > 0, "scale-down": r.scaleDown, "image": r.setsImage}
 	reasons := []string{}
 	for _, reason := range pol.ApprovalRequiredFor {
 		if met[reason] {
@@ -296,4 +293,23 @@ func parse(snapshot, plan, policy []byte) (*inputs, *inputError) {
 func hash(b []byte) string {
 	sum := sha256.Sum256(b)
 	return "sha256:" + hex.EncodeToString(sum[:])
+}
+
+// criticalInvolved lists the critical deployments the plan names, or whose
+// pods it moves, replaces or removes.
+func (r *run) criticalInvolved() []string {
+	named := map[string]bool{}
+	for _, c := range r.in.plan.Goal {
+		named[c.Deployment] = true
+	}
+	for _, s := range r.in.plan.Steps {
+		named[s.Deployment] = true
+	}
+	var out []string
+	for _, d := range r.in.policy.CriticalDeployments {
+		if named[d] || r.disrupted[d] {
+			out = append(out, d)
+		}
+	}
+	return out
 }

@@ -45,6 +45,8 @@ The CAUTION block comes first because STE puts a safety instruction before the t
 
 ## Templates
 
+The authoritative list of every sentence is [render/templates.go](../../render/templates.go): one named template per sentence form, linted against the rules above. The tables here describe them.
+
 `{d}` is a deployment (`ns/name`), `{n}` a node, `{s}` a step number. Plurals are chosen by the number ("1 pod is", "0 pods are").
 
 ### Goal
@@ -76,9 +78,10 @@ Inside `frame` evidence, changes are described, not instructed:
 | Fact | Sentence |
 | --- | --- |
 | Proved | PROVED. The kernel found no violation of the {k} rules in section 3. |
-| Refuted | REFUTED. The plan breaks {k} rules at step {s}. Do not run this plan. (At the end: "after the last step".) |
+| Refuted | REFUTED. The plan breaks {k} rules {where}. Do not run this plan. `{where}` is "at step {s}", "before the first step" (static rules), "after the last step" or "at rollback step {s}". ("1 rule" when {k} is 1.) |
+| Refuted, input | REFUTED. The kernel cannot read the input files. Do not run this plan. (The title then reads "(the kernel cannot read the inputs)".) |
 | Unknown | UNKNOWN. The kernel cannot check step {s}. A person must decide. |
-| Approval required | A person must approve this plan before it runs. Then one sentence per reason: "Reason: the plan moves pods off nodes." / "Reason: the plan changes or moves pods of a critical deployment, `{d}`." / "Reason: the plan decreases the number of pods." / "Reason: the plan changes an image." / "Reason: the policy requires approval for all plans." |
+| Approval required | A person must approve this plan before it runs. Then one sentence per reason (one per critical deployment, from the approval fact's `evidence.critical`): "Reason: the plan moves pods off nodes." / "Reason: the plan changes or moves pods of a critical deployment, `{d}`." / "Reason: the plan decreases the number of pods." / "Reason: the plan changes an image." / "Reason: the policy requires approval for all plans." |
 | Approval not required | The policy lets this plan run without approval. |
 
 ### Checks done
@@ -127,14 +130,18 @@ CAUTION: DO NOT APPROVE THIS PLAN.
 | `capacity` | After step {s}, no node has space for a new `{d}` pod. |
 | `frame`, extra | The plan makes a change that the goal does not list. Then one change sentence (below) per extra change. |
 | `frame`, missing | The plan does not make a change that the goal lists. Then one change sentence per missing change. |
+| `frame`, static | "The goal lists `{field}` of `{object}` more than 1 time." / "The goal says that `{field}` of `{object}` is {from} now. The snapshot shows {actual}." / "The goal changes `{field}` of `{object}` to the value that it has now." |
 | `cordon-first` | Step {s} moves pods off node `{n}`. Node `{n}` still accepts new pods. |
 | `no-orphans` | Step {s} removes pod `{p}`. This pod has no owner, so it does not come back. |
 | `settled` | The plan ends before the new `{d}` pods are ready. Add a step that waits for `{d}`. |
-| `assertions` | Step {s} expects {key} to be {expected}. The value is {actual}. |
-| `scope` / `protected` | The plan names `{object}`. The policy does not let plans change it. |
-| `limits` | {Phase} step {s}, {x} nodes stop new pods. The limit is {lim}. (and the other limit forms) |
-| `input` | The input files are not correct: {reason}. |
-| `rollback` | Rollback step {s}: {the inner failure's sentences}. |
+| `assertions` | Step {s} expects `{key}` of `{object}` to be {expected}. The value is {actual}. |
+| `scope` | Not managed: "The plan names `{object}`. The policy does not let plans change it." Not in the snapshot: "The plan names `{object}`. The snapshot does not have it." (or "container `{c}` in `{object}`") |
+| `protected` | The plan names `{object}`. The policy does not let plans change it. |
+| `limits` | "{When}, {x} nodes stop new pods. The limit is {lim}." / "{When}, only {x} nodes accept new pods. The limit is {lim}." / "The plan asks for {x} pods. The limit is {lim}." / "A wait step can take {x} seconds. The limit is {lim} seconds." / "The image `{image}` has no digest. The policy needs a digest." |
+| `input` | The {plan / snapshot / policy} file is not correct. Problem: `{reason}` at `{path}`. (Without "at" when there is no path.) |
+| `rollback` | At a rollback step: the inner rule's sentences, which already say "rollback step {s}". Fields not restored: "The rollback does not restore this item." then one change sentence per field. |
+
+`{When}` is "During step {s}" or "After step {s}" (or "rollback step {s}", or "the last step").
 
 Unknown:
 
@@ -184,14 +191,15 @@ Unchecked text: "The agent wrote this text. The kernel did not check it." then e
 | `rollout-restart` | Replace all `{d}` pods. |
 | `wait` | Wait until `{d1}` and `{d2}` are ready. Stop the plan if this takes more than {t}. ({t} in minutes when it divides by 60, else in seconds.) |
 
-A `pre` assertion adds an indented line: "First, the runner makes sure that {assertion}." (for example "node `n1` accepts new pods").
+A `pre` assertion adds an indented line: "First, the runner makes sure that {claim}." A `post` assertion adds "After this step, the kernel expects that {claim}." Claims: "the number of `{d}` pods is {x}", "container `{c}` in `{d}` has the image `{image}`", "node `{n}` accepts new pods", "node `{n}` does not accept new pods", "node `{n}` has {x} pods".
 
 With no rollback: "None. The plan has no rollback." After the rollback steps, one NOTE per `not-reversible` fact: "NOTE: The rollback does not move pods back to node `{n}`." / "NOTE: The rollback does not bring back the old `{d}` pods."
 
 ## Requirements on the renderer
 
 - **Pure and deterministic**: the same verdict gives the same bytes.
-- **Complete**: every fact produces at least one sentence, and every sentence comes from a fact. Tested by tagging each sentence with its fact index in a debug mode.
+- **Complete**: every fact produces at least one sentence, and every sentence comes from a fact, except the fixed structure (`head.*` templates and "The plan must change nothing else."). Tested by tagging each line with its fact index or structure template (`render.Debug`).
+- **Every template reached**: some verdict in the test corpus (the examples and every case in `internal/testcases`) uses each template, so the lint and golden tests cover everything a person can read.
 - **No free text** except `unchecked-text` facts, which are quoted, stripped of control characters and cut to their maximum length.
-- **Linted**: CI fills every template with sample values and checks W2 (length), W4 (word list), W5 ("-ing", with an allowlist of words that are not verb forms, such as "during" and "nothing"), W9 (banned words) and a passive-voice heuristic. A template that fails the lint fails the build.
+- **Linted**: CI fills every template with sample values and checks W2 (length), W4 (word list: [render/words.txt](../../render/words.txt), which must also contain no unused word), W5 ("-ing", with an allowlist of words that are not verb forms: "bring", "during", "nothing"), W9 (banned words) and a passive-voice heuristic. A template that fails the lint fails the build.
 - **Golden tests**: each example's expected packet is a file in the repo, compared byte for byte.

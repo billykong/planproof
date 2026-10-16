@@ -30,7 +30,7 @@ The attacker's best tool is the agent: a prompt injection in a ticket, log or to
 | SEC-05 | The verdict binds the SHA-256 of the plan, snapshot and policy and the kernel version; the executor checks all four. | Must | Planned |
 | SEC-06 | The executor's identity can do only what the operation set needs (scale, image patch, restart annotation, node `unschedulable`, the Eviction API) and is tested with `kubectl auth can-i`. | Must | Planned |
 | SEC-07 | The executor uses the Eviction API for drains, never pod deletion, so the cluster's own disruption budgets still apply if the model is wrong. | Must | Planned |
-| SEC-08 | Text from the plan (`rationale`, `ticket`, names) is never interpreted, and appears in the packet only quoted, in a section marked as unchecked. Object names are checked against Kubernetes name rules. | Must | **Partial**: names and lengths checked, unknown keys never echoed (`TestInputRejected`); quoting in the packet comes with the renderer |
+| SEC-08 | Text from the plan (`rationale`, `ticket`, names) is never interpreted, and appears in the packet only quoted, in a section marked as unchecked. Object names are checked against Kubernetes name rules. | Must | **Done**: names and lengths checked, unknown keys never echoed (`TestInputRejected`); free text quoted and neutralised in the packet (`TestUncheckedText`) |
 | SEC-09 | The kernel and parser are fuzzed in CI. | Should | **Done**: `FuzzCheck` (`make fuzz`) |
 
 ## Residual risks

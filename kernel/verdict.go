@@ -3,6 +3,8 @@ package kernel
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"strings"
 )
 
 // KernelVersion is recorded in every verdict; the executor checks it (SEC-05).
@@ -26,6 +28,7 @@ var Rules = []string{
 type Verdict struct {
 	APIVersion       string `json:"apiVersion"`
 	Kind             string `json:"kind"`
+	PlanName         string `json:"planName"`
 	Result           Result `json:"result"`
 	KernelVersion    string `json:"kernelVersion"`
 	PlanSHA256       string `json:"planSha256"`
@@ -75,6 +78,26 @@ func (s StepRef) MarshalJSON() ([]byte, error) {
 		return json.Marshal(fmt.Sprintf("rollback:%d", s.Index))
 	}
 	return json.Marshal(s.Index)
+}
+
+func (s *StepRef) UnmarshalJSON(b []byte) error {
+	var v any
+	if err := json.Unmarshal(b, &v); err != nil {
+		return err
+	}
+	switch v := v.(type) {
+	case float64:
+		*s = StepRef{Index: int(v)}
+	case string:
+		if v == "end" {
+			*s = StepRef{End: true}
+			return nil
+		}
+		n, err := strconv.Atoi(strings.TrimPrefix(v, "rollback:"))
+		*s = StepRef{Index: n, Rollback: true}
+		return err
+	}
+	return nil
 }
 
 // Outcomes of a check fact.
