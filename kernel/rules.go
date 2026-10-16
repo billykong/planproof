@@ -12,16 +12,17 @@ func (r *run) static() {
 	plan, pol, st, ref := &r.in.plan, &r.in.policy, r.st, StepRef{}
 	steps := append(slices.Clone(plan.Steps), plan.Rollback...)
 	var deps, nodes []string
+	changed := map[string]bool{} // named by the goal or a step that changes it; a wait only watches
 	for _, c := range plan.Goal {
 		if c.Deployment != "" {
-			deps = append(deps, c.Deployment)
+			deps, changed[c.Deployment] = append(deps, c.Deployment), true
 		} else {
 			nodes = append(nodes, c.Node)
 		}
 	}
 	for _, s := range steps {
 		deps = append(append(deps, s.Deployments...), s.Deployment)
-		nodes = append(nodes, s.Node)
+		nodes, changed[s.Deployment] = append(nodes, s.Node), true
 	}
 	slices.Sort(deps)
 	slices.Sort(nodes)
@@ -34,7 +35,7 @@ func (r *run) static() {
 		case st.deps[d] == nil:
 			r.fail("scope", ref, "static", "deployment/"+d, map[string]any{"reason": "not-found"})
 		}
-		if slices.Contains(pol.ProtectedDeployments, d) {
+		if changed[d] && slices.Contains(pol.ProtectedDeployments, d) {
 			r.fail("protected", ref, "static", "deployment/"+d, nil)
 		}
 	}

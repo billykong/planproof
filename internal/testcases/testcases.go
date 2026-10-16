@@ -166,6 +166,10 @@ var Cases = []Case{
 	{Name: "scope: deployment not in snapshot", Plan: strings.Replace(drainN1, "shop/cart]", "shop/ghost]", 1), Want: "Refuted", Rule: "scope"},
 	{Name: "scope: namespace not managed", Pol: func(m map[string]any) { m["managedNamespaces"] = []any{"other"} }, Plan: scaleTo(3), Want: "Refuted", Rule: "scope"},
 	{Name: "scope: container not in deployment", Plan: strings.ReplaceAll(fmt.Sprintf(imageCart, newDigest), "container: web", "container: api"), Want: "Refuted", Rule: "scope"},
+	{Name: "accept: drain a node running a protected deployment's pod, and wait for it", Plan: `
+goal: [{node: n3, field: unschedulable, from: false, to: true}, {node: n3, field: drained, from: false, to: true}]
+steps: [{op: cordon, node: n3}, {op: drain, node: n3}, {op: wait, deployments: [shop/checkout, shop/payments], timeoutSeconds: 300}]
+`, Want: "Proved"},
 	{Name: "protected", Plan: strings.ReplaceAll(scaleTo(3), "shop/cart", "shop/payments"), Want: "Refuted", Rule: "protected"},
 
 	{Name: "limits: replicas", Plan: scaleTo(21), Want: "Refuted", Rule: "limits"},

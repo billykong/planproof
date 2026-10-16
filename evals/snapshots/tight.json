@@ -1,0 +1,345 @@
+{
+  "apiVersion": "planproof/v0",
+  "kind": "Snapshot",
+  "cluster": "kind-planproof",
+  "fetchedAt": "2026-10-14T10:00:00Z",
+  "nodes": [
+    {
+      "name": "n1",
+      "ready": true,
+      "unschedulable": false,
+      "taints": false,
+      "allocatable": {
+        "cpuMilli": 1400,
+        "memoryMiB": 8192,
+        "pods": 110
+      },
+      "resourceVersion": "1001"
+    },
+    {
+      "name": "n2",
+      "ready": true,
+      "unschedulable": false,
+      "taints": false,
+      "allocatable": {
+        "cpuMilli": 1400,
+        "memoryMiB": 8192,
+        "pods": 110
+      },
+      "resourceVersion": "1002"
+    },
+    {
+      "name": "n3",
+      "ready": true,
+      "unschedulable": false,
+      "taints": false,
+      "allocatable": {
+        "cpuMilli": 1400,
+        "memoryMiB": 8192,
+        "pods": 110
+      },
+      "resourceVersion": "1003"
+    },
+    {
+      "name": "n4",
+      "ready": true,
+      "unschedulable": false,
+      "taints": false,
+      "allocatable": {
+        "cpuMilli": 1400,
+        "memoryMiB": 8192,
+        "pods": 110
+      },
+      "resourceVersion": "1004"
+    }
+  ],
+  "deployments": [
+    {
+      "namespace": "shop",
+      "name": "cart",
+      "replicas": 2,
+      "readyReplicas": 2,
+      "updatedReplicas": 2,
+      "strategy": {
+        "type": "RollingUpdate",
+        "maxUnavailable": 0,
+        "maxSurge": 1
+      },
+      "containers": [
+        {
+          "name": "web",
+          "image": "registry.example/cart@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "podRequests": {
+        "cpuMilli": 250,
+        "memoryMiB": 256,
+        "pods": 1
+      },
+      "placementRules": false,
+      "hpa": false,
+      "resourceVersion": "2002"
+    },
+    {
+      "namespace": "shop",
+      "name": "checkout",
+      "replicas": 3,
+      "readyReplicas": 3,
+      "updatedReplicas": 3,
+      "strategy": {
+        "type": "RollingUpdate",
+        "maxUnavailable": 0,
+        "maxSurge": 1
+      },
+      "containers": [
+        {
+          "name": "web",
+          "image": "registry.example/checkout@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        }
+      ],
+      "podRequests": {
+        "cpuMilli": 500,
+        "memoryMiB": 512,
+        "pods": 1
+      },
+      "placementRules": false,
+      "hpa": false,
+      "resourceVersion": "2001"
+    },
+    {
+      "namespace": "shop",
+      "name": "payments",
+      "replicas": 2,
+      "readyReplicas": 2,
+      "updatedReplicas": 2,
+      "strategy": {
+        "type": "RollingUpdate",
+        "maxUnavailable": 0,
+        "maxSurge": 1
+      },
+      "containers": [
+        {
+          "name": "web",
+          "image": "registry.example/payments@sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        }
+      ],
+      "podRequests": {
+        "cpuMilli": 500,
+        "memoryMiB": 512,
+        "pods": 1
+      },
+      "placementRules": false,
+      "hpa": false,
+      "resourceVersion": "2003"
+    }
+  ],
+  "pods": [
+    {
+      "namespace": "kube-system",
+      "name": "kube-proxy-n1",
+      "node": "n1",
+      "ready": true,
+      "owner": {
+        "kind": "DaemonSet",
+        "name": "kube-proxy"
+      },
+      "requests": {
+        "cpuMilli": 100,
+        "memoryMiB": 64,
+        "pods": 1
+      },
+      "localStorage": false,
+      "placementRules": false
+    },
+    {
+      "namespace": "kube-system",
+      "name": "kube-proxy-n2",
+      "node": "n2",
+      "ready": true,
+      "owner": {
+        "kind": "DaemonSet",
+        "name": "kube-proxy"
+      },
+      "requests": {
+        "cpuMilli": 100,
+        "memoryMiB": 64,
+        "pods": 1
+      },
+      "localStorage": false,
+      "placementRules": false
+    },
+    {
+      "namespace": "kube-system",
+      "name": "kube-proxy-n3",
+      "node": "n3",
+      "ready": true,
+      "owner": {
+        "kind": "DaemonSet",
+        "name": "kube-proxy"
+      },
+      "requests": {
+        "cpuMilli": 100,
+        "memoryMiB": 64,
+        "pods": 1
+      },
+      "localStorage": false,
+      "placementRules": false
+    },
+    {
+      "namespace": "kube-system",
+      "name": "kube-proxy-n4",
+      "node": "n4",
+      "ready": true,
+      "owner": {
+        "kind": "DaemonSet",
+        "name": "kube-proxy"
+      },
+      "requests": {
+        "cpuMilli": 100,
+        "memoryMiB": 64,
+        "pods": 1
+      },
+      "localStorage": false,
+      "placementRules": false
+    },
+    {
+      "namespace": "shop",
+      "name": "checkout-a",
+      "node": "n1",
+      "ready": true,
+      "owner": {
+        "kind": "Deployment",
+        "name": "checkout"
+      },
+      "requests": {
+        "cpuMilli": 500,
+        "memoryMiB": 512,
+        "pods": 1
+      },
+      "localStorage": false,
+      "placementRules": false
+    },
+    {
+      "namespace": "shop",
+      "name": "checkout-b",
+      "node": "n2",
+      "ready": true,
+      "owner": {
+        "kind": "Deployment",
+        "name": "checkout"
+      },
+      "requests": {
+        "cpuMilli": 500,
+        "memoryMiB": 512,
+        "pods": 1
+      },
+      "localStorage": false,
+      "placementRules": false
+    },
+    {
+      "namespace": "shop",
+      "name": "checkout-c",
+      "node": "n3",
+      "ready": true,
+      "owner": {
+        "kind": "Deployment",
+        "name": "checkout"
+      },
+      "requests": {
+        "cpuMilli": 500,
+        "memoryMiB": 512,
+        "pods": 1
+      },
+      "localStorage": false,
+      "placementRules": false
+    },
+    {
+      "namespace": "shop",
+      "name": "cart-a",
+      "node": "n1",
+      "ready": true,
+      "owner": {
+        "kind": "Deployment",
+        "name": "cart"
+      },
+      "requests": {
+        "cpuMilli": 250,
+        "memoryMiB": 256,
+        "pods": 1
+      },
+      "localStorage": false,
+      "placementRules": false
+    },
+    {
+      "namespace": "shop",
+      "name": "cart-b",
+      "node": "n2",
+      "ready": true,
+      "owner": {
+        "kind": "Deployment",
+        "name": "cart"
+      },
+      "requests": {
+        "cpuMilli": 250,
+        "memoryMiB": 256,
+        "pods": 1
+      },
+      "localStorage": false,
+      "placementRules": false
+    },
+    {
+      "namespace": "shop",
+      "name": "payments-a",
+      "node": "n3",
+      "ready": true,
+      "owner": {
+        "kind": "Deployment",
+        "name": "payments"
+      },
+      "requests": {
+        "cpuMilli": 500,
+        "memoryMiB": 512,
+        "pods": 1
+      },
+      "localStorage": false,
+      "placementRules": false
+    },
+    {
+      "namespace": "shop",
+      "name": "payments-b",
+      "node": "n4",
+      "ready": true,
+      "owner": {
+        "kind": "Deployment",
+        "name": "payments"
+      },
+      "requests": {
+        "cpuMilli": 500,
+        "memoryMiB": 512,
+        "pods": 1
+      },
+      "localStorage": false,
+      "placementRules": false
+    }
+  ],
+  "pdbs": [
+    {
+      "namespace": "shop",
+      "name": "cart",
+      "deployment": "cart",
+      "minAvailable": 1
+    },
+    {
+      "namespace": "shop",
+      "name": "checkout",
+      "deployment": "checkout",
+      "minAvailable": 2
+    },
+    {
+      "namespace": "shop",
+      "name": "payments",
+      "deployment": "payments",
+      "minAvailable": 1
+    }
+  ]
+}

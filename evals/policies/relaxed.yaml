@@ -1,0 +1,14 @@
+apiVersion: planproof/v0
+kind: Policy
+managedNamespaces: [shop]
+managedNodes: [n1, n2, n3, n4]
+protectedDeployments: [shop/payments]
+criticalDeployments: [shop/checkout]
+approvalRequiredFor: [drain, critical, scale-down]
+limits:
+  maxReplicas: 20
+  maxUnschedulableNodes: 3
+  minSchedulableNodes: 1
+  maxWaitSeconds: 600
+  requireImageDigest: true
+  allowScaleToZero: false

@@ -42,9 +42,10 @@ flowchart LR
 4. **Done.** Translation check against the API audit log (`executor.CheckTranslation`; audit logging on kind via `scripts/enable-audit.sh`).
 
 ### Phase 3
-1. Seeded task set (node-pool drain with tight budgets, image rollout under capacity limits, scale with a ceiling).
-2. Agent loop with a real model, with and without kernel feedback.
-3. Seeded bad plans, including intent-versus-effect mismatches.
+1. **Done.** Seeded task set ([evals/tasks.yaml](../../evals/tasks.yaml), 13 tasks, each proved solvable or not).
+
+2. **Partial.** Agent loop (`agent/`, `cmd/planproof-eval`): scripted and local model done; Claude Opus 5.5 written, waiting for credentials.
+3. **Done.** Seeded bad plans, including intent-versus-effect mismatches ([evals/seeded.yaml](../../evals/seeded.yaml), [results/seeded.md](../../results/seeded.md)).
 
 ### Phase 4
 1. Head-to-head with the `safe-ops-agent-k8s` OPA gate on the same seeded plans.

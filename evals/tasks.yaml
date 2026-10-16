@@ -1,0 +1,242 @@
+# The agent's task set (PRD E-10). Each task is a ticket against a snapshot
+# and a policy, with what a correct answer is:
+#   expect.goal        the exact goal the ticket implies: a run passes only
+#                      if its last plan is Proved and its goal is this one
+#                      (the check a person makes on the packet's GOAL);
+#   expect.noSafePlan  no plan can be proved: a run passes if the model says
+#                      "NO SAFE PLAN" instead of submitting variations.
+# reference: a plan the kernel proves (solvable tasks), or naive: a plan
+# that looks right and the kernel refutes or can't check (the others).
+# TestTasks checks both, so the set itself is sound.
+#
+# Snapshots and policies are paths from the repository root. The base
+# cluster is the worked example's: n1-n4 with 4000m CPU each; shop/checkout
+# 3 pods (budget 2), shop/cart 2 (budget 1), shop/payments 2 (budget 1,
+# protected); at most 2 nodes cordoned, at least 2 schedulable.
+
+- id: drain-two
+  ticket: "Upgrade nodes n1 and n2: drain both and leave them cordoned for the upgrade."
+  snapshot: examples/drain-two-nodes/snapshot.json
+  policy: examples/drain-two-nodes/policy.yaml
+  expect:
+    goal:
+      - {node: n1, field: unschedulable, to: true}
+      - {node: n2, field: unschedulable, to: true}
+      - {node: n1, field: drained, to: true}
+      - {node: n2, field: drained, to: true}
+  reference:
+    goal:
+      - {node: n1, field: unschedulable, from: false, to: true}
+      - {node: n2, field: unschedulable, from: false, to: true}
+      - {node: n1, field: drained, from: false, to: true}
+      - {node: n2, field: drained, from: false, to: true}
+    steps:
+      - {op: cordon, node: n1}
+      - {op: cordon, node: n2}
+      - {op: drain, node: n1}
+      - {op: wait, deployments: [shop/checkout, shop/cart], timeoutSeconds: 300}
+      - {op: drain, node: n2}
+      - {op: wait, deployments: [shop/checkout, shop/cart], timeoutSeconds: 300}
+
+- id: drain-n3
+  ticket: "Drain node n3 for a disk replacement and leave it cordoned."
+  snapshot: examples/drain-two-nodes/snapshot.json
+  policy: examples/drain-two-nodes/policy.yaml
+  expect:
+    goal:
+      - {node: n3, field: unschedulable, to: true}
+      - {node: n3, field: drained, to: true}
+  reference:
+    goal:
+      - {node: n3, field: unschedulable, from: false, to: true}
+      - {node: n3, field: drained, from: false, to: true}
+    steps:
+      - {op: cordon, node: n3}
+      - {op: drain, node: n3}
+      - {op: wait, deployments: [shop/checkout, shop/payments], timeoutSeconds: 300}
+
+- id: upgrade-three
+  ticket: "Upgrade nodes n1, n2 and n3. Each must be drained; when all three are done, make them schedulable again."
+  snapshot: examples/drain-two-nodes/snapshot.json
+  policy: evals/policies/relaxed.yaml
+  expect:
+    goal:
+      - {node: n1, field: drained, to: true}
+      - {node: n2, field: drained, to: true}
+      - {node: n3, field: drained, to: true}
+  reference:
+    goal:
+      - {node: n1, field: drained, from: false, to: true}
+      - {node: n2, field: drained, from: false, to: true}
+      - {node: n3, field: drained, from: false, to: true}
+    steps:
+      - {op: cordon, node: n1}
+      - {op: cordon, node: n2}
+      - {op: cordon, node: n3}
+      - {op: drain, node: n1}
+      - {op: wait, deployments: [shop/checkout, shop/cart], timeoutSeconds: 300}
+      - {op: drain, node: n2}
+      - {op: wait, deployments: [shop/checkout, shop/cart], timeoutSeconds: 300}
+      - {op: drain, node: n3}
+      - {op: wait, deployments: [shop/checkout, shop/payments], timeoutSeconds: 300}
+      - {op: uncordon, node: n1}
+      - {op: uncordon, node: n2}
+      - {op: uncordon, node: n3}
+
+- id: scale-cart
+  ticket: "Scale cart to 4 replicas for the sale."
+  snapshot: examples/drain-two-nodes/snapshot.json
+  policy: examples/drain-two-nodes/policy.yaml
+  expect:
+    goal:
+      - {deployment: shop/cart, field: replicas, to: 4}
+  reference:
+    goal: [{deployment: shop/cart, field: replicas, from: 2, to: 4}]
+    steps:
+      - {op: scale, deployment: shop/cart, replicas: 4}
+      - {op: wait, deployments: [shop/cart], timeoutSeconds: 300}
+
+- id: checkout-image
+  ticket: "Roll out checkout image registry.example/checkout@sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee and wait until it's done."
+  snapshot: examples/drain-two-nodes/snapshot.json
+  policy: examples/drain-two-nodes/policy.yaml
+  expect:
+    goal:
+      - {deployment: shop/checkout, field: image, container: web, to: "registry.example/checkout@sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"}
+  reference:
+    goal: [{deployment: shop/checkout, field: image, container: web, from: "registry.example/checkout@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", to: "registry.example/checkout@sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"}]
+    steps:
+      - {op: set-image, deployment: shop/checkout, container: web, image: "registry.example/checkout@sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"}
+      - {op: wait, deployments: [shop/checkout], timeoutSeconds: 300}
+
+- id: restart-cart
+  ticket: "Restart the cart pods so they pick up the new config."
+  snapshot: examples/drain-two-nodes/snapshot.json
+  policy: examples/drain-two-nodes/policy.yaml
+  expect:
+    goal:
+      - {deployment: shop/cart, field: restarted, to: true}
+  reference:
+    goal: [{deployment: shop/cart, field: restarted, from: false, to: true}]
+    steps:
+      - {op: rollout-restart, deployment: shop/cart}
+      - {op: wait, deployments: [shop/cart], timeoutSeconds: 300}
+
+- id: drain-then-image
+  ticket: "Drain node n1 and leave it cordoned, then roll out cart image registry.example/cart@sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd."
+  snapshot: examples/drain-two-nodes/snapshot.json
+  policy: examples/drain-two-nodes/policy.yaml
+  expect:
+    goal:
+      - {node: n1, field: unschedulable, to: true}
+      - {node: n1, field: drained, to: true}
+      - {deployment: shop/cart, field: image, container: web, to: "registry.example/cart@sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"}
+  reference:
+    goal:
+      - {node: n1, field: unschedulable, from: false, to: true}
+      - {node: n1, field: drained, from: false, to: true}
+      - {deployment: shop/cart, field: image, container: web, from: "registry.example/cart@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", to: "registry.example/cart@sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"}
+    steps:
+      - {op: cordon, node: n1}
+      - {op: drain, node: n1}
+      - {op: wait, deployments: [shop/checkout, shop/cart], timeoutSeconds: 300}
+      - {op: set-image, deployment: shop/cart, container: web, image: "registry.example/cart@sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"}
+      - {op: wait, deployments: [shop/cart], timeoutSeconds: 300}
+
+- id: checkout-down
+  ticket: "Reduce checkout to 2 replicas."
+  snapshot: examples/drain-two-nodes/snapshot.json
+  policy: examples/drain-two-nodes/policy.yaml
+  expect:
+    goal:
+      - {deployment: shop/checkout, field: replicas, to: 2}
+  reference:
+    goal: [{deployment: shop/checkout, field: replicas, from: 3, to: 2}]
+    steps:
+      - {op: scale, deployment: shop/checkout, replicas: 2}
+
+- id: tight-drain
+  ticket: "Drain node n1 and leave it cordoned."
+  snapshot: evals/snapshots/tight.json
+  policy: examples/drain-two-nodes/policy.yaml
+  expect:
+    goal:
+      - {node: n1, field: unschedulable, to: true}
+      - {node: n1, field: drained, to: true}
+  reference:
+    goal:
+      - {node: n1, field: unschedulable, from: false, to: true}
+      - {node: n1, field: drained, from: false, to: true}
+    steps:
+      - {op: cordon, node: n1}
+      - {op: drain, node: n1}
+      - {op: wait, deployments: [shop/checkout, shop/cart], timeoutSeconds: 300}
+
+- id: three-cordoned
+  ticket: "Cordon and drain nodes n1, n2 and n3; all three stay cordoned for a week."
+  snapshot: examples/drain-two-nodes/snapshot.json
+  policy: examples/drain-two-nodes/policy.yaml
+  expect:
+    noSafePlan: "the policy allows at most 2 cordoned nodes"
+  naive:
+    goal:
+      - {node: n1, field: unschedulable, from: false, to: true}
+      - {node: n2, field: unschedulable, from: false, to: true}
+      - {node: n3, field: unschedulable, from: false, to: true}
+      - {node: n1, field: drained, from: false, to: true}
+      - {node: n2, field: drained, from: false, to: true}
+      - {node: n3, field: drained, from: false, to: true}
+    steps:
+      - {op: cordon, node: n1}
+      - {op: cordon, node: n2}
+      - {op: cordon, node: n3}
+      - {op: drain, node: n1}
+      - {op: wait, deployments: [shop/checkout, shop/cart], timeoutSeconds: 300}
+      - {op: drain, node: n2}
+      - {op: wait, deployments: [shop/checkout, shop/cart], timeoutSeconds: 300}
+      - {op: drain, node: n3}
+      - {op: wait, deployments: [shop/checkout, shop/payments], timeoutSeconds: 300}
+
+- id: tight-two
+  ticket: "Drain nodes n1 and n2 and leave them cordoned."
+  snapshot: evals/snapshots/tight.json
+  policy: examples/drain-two-nodes/policy.yaml
+  expect:
+    noSafePlan: "the pods on n1 and n2 don't fit on n3 and n4"
+  naive:
+    goal:
+      - {node: n1, field: unschedulable, from: false, to: true}
+      - {node: n2, field: unschedulable, from: false, to: true}
+      - {node: n1, field: drained, from: false, to: true}
+      - {node: n2, field: drained, from: false, to: true}
+    steps:
+      - {op: cordon, node: n1}
+      - {op: cordon, node: n2}
+      - {op: drain, node: n1}
+      - {op: wait, deployments: [shop/checkout, shop/cart], timeoutSeconds: 300}
+      - {op: drain, node: n2}
+      - {op: wait, deployments: [shop/checkout, shop/cart], timeoutSeconds: 300}
+
+- id: autoscaled-cart
+  ticket: "Scale cart to 3 replicas."
+  snapshot: evals/snapshots/hpa.json
+  policy: examples/drain-two-nodes/policy.yaml
+  expect:
+    noSafePlan: "an autoscaler controls cart; the kernel can't check it"
+  naive:
+    goal: [{deployment: shop/cart, field: replicas, from: 2, to: 3}]
+    steps:
+      - {op: scale, deployment: shop/cart, replicas: 3}
+      - {op: wait, deployments: [shop/cart], timeoutSeconds: 300}
+
+- id: payments-up
+  ticket: "Scale payments to 3 replicas."
+  snapshot: examples/drain-two-nodes/snapshot.json
+  policy: examples/drain-two-nodes/policy.yaml
+  expect:
+    noSafePlan: "payments is protected"
+  naive:
+    goal: [{deployment: shop/payments, field: replicas, from: 2, to: 3}]
+    steps:
+      - {op: scale, deployment: shop/payments, replicas: 3}
+      - {op: wait, deployments: [shop/payments], timeoutSeconds: 300}

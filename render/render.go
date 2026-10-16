@@ -624,3 +624,17 @@ func claims(s *kernel.Step, a *kernel.Assertions) []string {
 	}
 	return out
 }
+
+// Explain returns the CAUTION block's sentences for a verdict's failures
+// or Unknown trigger, without the block's heading: the same words a person
+// reads, given to the planning agent with the facts (PRD E-02).
+func Explain(v kernel.Verdict) []string {
+	p := &packet{v: v}
+	p.each("failure", func(i int, f kernel.Fact) { p.failure(i, 0, f) })
+	p.each("unknown", func(i int, f kernel.Fact) { p.unknown(i, f) })
+	var out []string
+	for _, l := range p.lines {
+		out = append(out, l.text)
+	}
+	return out
+}

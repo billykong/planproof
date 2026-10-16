@@ -27,7 +27,7 @@ This folder is the product requirements document (PRD): what we're building, why
 | R Review packet | **Phase 1 milestone 4 done**: renderer, word list, template lint, golden packets. Open: R-09, R-11 |
 | T CLI | **Done**: `check`, `render`, `hash`; strict YAML conversion. Open: an automated check for T-07 |
 | C Cluster | **Done for phase 2**: fetcher, executor, model fidelity (the predicted lowest matched the real cluster exactly in every case), translation check. Open: C-22 (2 of 8 triggers); gaps in [known-gaps.md](../known-gaps.md) |
-| E Agent and evals | Planned |
+| E Agent and evals | **In progress** (phase 3): agent loop, 13 tasks, 24 seeded plans, local-model results; the Claude run is next |
 
 ## Conventions
 

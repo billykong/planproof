@@ -12,7 +12,7 @@ Every rule has a short ID, used in facts and in the packet. Rules are checked at
 | --- | --- | --- |
 | `input` | Static | An input is over its size limit or fails strict parsing, or the plan's `snapshot` hash doesn't match the snapshot |
 | `scope` | Static | A goal or step names a deployment outside `managedNamespaces`, a node outside `managedNodes`, or an object not in the snapshot |
-| `protected` | Static | A goal or step names a deployment in `protectedDeployments`. (A drain may still move its pods; `budget` and `never-zero` cover that.) |
+| `protected` | Static | The goal, or a step that changes a deployment (`scale`, `set-image`, `rollout-restart`), names a deployment in `protectedDeployments`. A `wait` may name one: waiting changes nothing, and a plan that drains a node running a protected deployment's pods must wait for them (`settled`). A drain may still move its pods; `budget` and `never-zero` cover that. (Until 2026-10-16 any step naming it broke the rule, which made such drains impossible.) |
 | `limits` | Static and each state | Static: a `replicas` above `maxReplicas`, a `timeoutSeconds` above `maxWaitSeconds`, an image without a digest when `requireImageDigest` is set. Each state: more than `maxUnschedulableNodes` nodes unschedulable, or fewer than `minSchedulableNodes` nodes ready and schedulable |
 | `assertions` | Each state | A `pre` assertion is false on the state before its step, or a `post` assertion is false on the state after it |
 | `cordon-first` | Each state | A drain targets a node that is not unschedulable |
