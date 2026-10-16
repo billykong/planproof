@@ -82,7 +82,7 @@ Each is an "axiom": the kernel relies on it, can't check it, and lists it in the
 | ID | Assumption | When it's listed | How it's tested or guarded |
 | --- | --- | --- | --- |
 | A1 `ready-stays-ready` | Pods ready in the snapshot stay ready unless a step disrupts them | Always | Executor's live `pre` checks; wait steps |
-| A2 `new-pods-start` | Pods the plan creates become ready by the next `wait` that names their deployment | Any step that creates pods | `wait` timeout; executor stops the run |
+| A2 `new-pods-start` | Pods the plan creates become ready by the next `wait` that names their deployment | Any step that creates pods (the fact names those steps) | `wait` timeout; executor stops the run |
 | A3 `scheduler-fit` | If first-fit finds room, the real scheduler places the pods too | Any step that creates pods | Model-fidelity tests; `wait` timeout |
 | A4 `no-other-actors` | Nothing else changes the modelled objects during the run | Always | `resourceVersion` preconditions; drift check before each step |
 | A5 `snapshot-true` | The snapshot describes the cluster correctly | Always | Fetcher tests against known states |

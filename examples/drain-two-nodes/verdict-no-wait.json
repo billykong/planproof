@@ -1,0 +1,262 @@
+{
+  "apiVersion": "planproof/v0",
+  "kind": "Verdict",
+  "result": "Refuted",
+  "kernelVersion": "0.1.0",
+  "planSha256": "sha256:c0f7a397fe0e0618b6818d1d40eb470f9e51dbec1a0b8e4fcc87fde21076eb68",
+  "snapshotSha256": "sha256:01d582c7f8de56cb623e5534474d6438c5ccaddd0f698cefadd4a691e777b625",
+  "policySha256": "sha256:7df1f0660a8b766fb6d46f10e1817f21252038c9bc401ff24078c244a705bf07",
+  "approvalRequired": false,
+  "facts": [
+    {
+      "type": "goal-change",
+      "object": "node/n1",
+      "field": "unschedulable",
+      "from": false,
+      "to": true
+    },
+    {
+      "type": "goal-change",
+      "object": "node/n2",
+      "field": "unschedulable",
+      "from": false,
+      "to": true
+    },
+    {
+      "type": "goal-change",
+      "object": "node/n1",
+      "field": "drained",
+      "from": false,
+      "to": true
+    },
+    {
+      "type": "goal-change",
+      "object": "node/n2",
+      "field": "drained",
+      "from": false,
+      "to": true
+    },
+    {
+      "type": "step",
+      "index": 1,
+      "params": {
+        "op": "cordon",
+        "node": "n1"
+      }
+    },
+    {
+      "type": "step",
+      "index": 2,
+      "params": {
+        "op": "cordon",
+        "node": "n2"
+      }
+    },
+    {
+      "type": "step",
+      "index": 3,
+      "params": {
+        "op": "drain",
+        "node": "n1"
+      }
+    },
+    {
+      "type": "step",
+      "index": 4,
+      "params": {
+        "op": "drain",
+        "node": "n2"
+      }
+    },
+    {
+      "type": "step",
+      "index": 5,
+      "params": {
+        "op": "wait",
+        "deployments": [
+          "shop/checkout",
+          "shop/cart"
+        ],
+        "timeoutSeconds": 300
+      }
+    },
+    {
+      "type": "check",
+      "rule": "input",
+      "outcome": "pass"
+    },
+    {
+      "type": "check",
+      "rule": "scope",
+      "outcome": "pass"
+    },
+    {
+      "type": "check",
+      "rule": "protected",
+      "outcome": "pass"
+    },
+    {
+      "type": "check",
+      "rule": "limits",
+      "outcome": "incomplete",
+      "step": 4
+    },
+    {
+      "type": "check",
+      "rule": "assertions",
+      "outcome": "incomplete",
+      "step": 4
+    },
+    {
+      "type": "check",
+      "rule": "cordon-first",
+      "outcome": "incomplete",
+      "step": 4
+    },
+    {
+      "type": "check",
+      "rule": "no-orphans",
+      "outcome": "incomplete",
+      "step": 4
+    },
+    {
+      "type": "check",
+      "rule": "budget",
+      "outcome": "fail",
+      "evidence": {
+        "items": [
+          {
+            "deployment": "shop/cart",
+            "lowestAvailable": 0,
+            "needs": 1,
+            "phase": "during",
+            "step": 4
+          },
+          {
+            "deployment": "shop/checkout",
+            "lowestAvailable": 1,
+            "needs": 2,
+            "phase": "during",
+            "step": 4
+          },
+          {
+            "deployment": "shop/payments",
+            "lowestAvailable": 2,
+            "needs": 1,
+            "phase": "during",
+            "step": null
+          }
+        ]
+      }
+    },
+    {
+      "type": "check",
+      "rule": "never-zero",
+      "outcome": "fail",
+      "evidence": {
+        "items": [
+          {
+            "deployment": "shop/cart",
+            "lowestAvailable": 0,
+            "phase": "during",
+            "step": 4
+          }
+        ]
+      }
+    },
+    {
+      "type": "check",
+      "rule": "capacity",
+      "outcome": "incomplete",
+      "step": 4
+    },
+    {
+      "type": "check",
+      "rule": "settled",
+      "outcome": "not-reached"
+    },
+    {
+      "type": "check",
+      "rule": "frame",
+      "outcome": "not-reached"
+    },
+    {
+      "type": "check",
+      "rule": "rollback",
+      "outcome": "not-applicable"
+    },
+    {
+      "type": "failure",
+      "rule": "budget",
+      "step": 4,
+      "phase": "during",
+      "object": "deployment/shop/cart",
+      "evidence": {
+        "deployment": "shop/cart",
+        "lowestAvailable": 0,
+        "needs": 1
+      }
+    },
+    {
+      "type": "failure",
+      "rule": "budget",
+      "step": 4,
+      "phase": "during",
+      "object": "deployment/shop/checkout",
+      "evidence": {
+        "deployment": "shop/checkout",
+        "lowestAvailable": 1,
+        "needs": 2
+      }
+    },
+    {
+      "type": "failure",
+      "rule": "never-zero",
+      "step": 4,
+      "phase": "during",
+      "object": "deployment/shop/cart",
+      "evidence": {
+        "deployment": "shop/cart",
+        "lowestAvailable": 0
+      }
+    },
+    {
+      "type": "assumption",
+      "id": "A1"
+    },
+    {
+      "type": "assumption",
+      "id": "A2",
+      "steps": [
+        3,
+        4
+      ]
+    },
+    {
+      "type": "assumption",
+      "id": "A3",
+      "steps": [
+        3,
+        4
+      ]
+    },
+    {
+      "type": "assumption",
+      "id": "A4"
+    },
+    {
+      "type": "assumption",
+      "id": "A5"
+    },
+    {
+      "type": "unchecked-text",
+      "field": "ticket",
+      "text": "OPS-1042: upgrade nodes n1 and n2"
+    },
+    {
+      "type": "unchecked-text",
+      "field": "rationale",
+      "text": "Drain both nodes, then wait once at the end to save time."
+    }
+  ]
+}

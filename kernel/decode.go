@@ -172,7 +172,8 @@ var schemaKeys = func() map[string]bool {
 			return
 		}
 		for i := 0; i < t.NumField(); i++ {
-			keys[t.Field(i).Tag.Get("json")] = true
+			name, _, _ := strings.Cut(t.Field(i).Tag.Get("json"), ",")
+			keys[name] = true
 			walk(t.Field(i).Type)
 		}
 	}

@@ -20,7 +20,7 @@ This folder is the product requirements document (PRD): what we're building, why
 | Area | Status |
 | --- | --- |
 | Phase 0: PRD, spec, worked example | **Drafted** (2026-10-14) |
-| K Kernel | **In progress**: phase 1 milestones 1-2 (budgets and CI; strict parsing, hashing, fuzzing) |
+| K Kernel | **Phase 1 milestones 1-3 done**: budgets and CI; strict parsing and fuzzing; model, operations, rules and verdict, with golden examples. Open: K-25, K-26 |
 | R Review packet | Planned |
 | C Cluster | Planned |
 | E Agent and evals | Planned |

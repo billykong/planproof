@@ -165,7 +165,7 @@ Each assumption line starts with its ID ("A1.").
 | Assumption | Sentences |
 | --- | --- |
 | A1 | The kernel thinks that pods that are ready now stay ready. Before each step, the runner examines the cluster again. |
-| A2 | The kernel does not check that new pods start. Steps {waits} wait for them. If a wait takes too long, the runner stops the plan. |
+| A2 | The kernel does not check that the new pods from steps {s} start. If a wait takes too long, the runner stops the plan. |
 | A3 | The kernel uses a simple model of the scheduler. The scheduler can put pods on different nodes. |
 | A4 | The kernel thinks that nothing else changes these objects during the plan. If an object changes, the runner stops. |
 | A5 | The kernel thinks that the snapshot is correct. |

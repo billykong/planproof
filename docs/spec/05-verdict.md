@@ -39,18 +39,18 @@ The kernel stops at the first failing step: the model after a failure isn't mean
 
 ## Facts
 
-The facts are everything the kernel found, as typed records. The renderer turns each fact into sentences ([06](06-review-packet.md)); the agent reads them to repair a plan. Facts are listed in a fixed order: by type in the order below, then by step, then by object name.
+The facts are everything the kernel found, as typed records. The renderer turns each fact into sentences ([06](06-review-packet.md)); the agent reads them to repair a plan. Facts are listed in a fixed order: by type in the order below; goal changes and steps in the plan's order; failures by rule (in the order of spec 04), then by object name.
 
 | `type` | Fields | When |
 | --- | --- | --- |
 | `goal-change` | `object` (`deployment/ns/name` or `node/name`), `field`, `container`?, `from`, `to` | Every goal entry, in the plan's order |
-| `step` | `index` (from 1), `op`, parameters | Every step |
-| `rollback-step` | `index`, `op`, parameters | Every rollback step |
+| `step` | `index` (from 1), `params` (the step as written: `op`, its parameters, `pre`, `post`) | Every step |
+| `rollback-step` | `index`, `params` | Every rollback step |
 | `not-reversible` | `object`, `field` | Each `drained` or `restarted` goal field, when a rollback is given |
 | `check` | `rule`, `outcome`, `evidence` | Every rule. `outcome` is `pass`, `fail`, `incomplete` (no failure up to the step where the check stopped, later steps unchecked), `not-reached` (an end rule the check never reached) or `not-applicable` (`rollback` when there is none) |
 | `failure` | `rule`, `step` (0 static, `end`, or an index; `rollback:<index>` for rollback steps), `phase` (`static`, `pre`, `during`, `after`, `end`), `evidence` | Each failing rule (Refuted) |
 | `unknown` | `trigger`, `step`, `object` | Unknown |
-| `assumption` | `id`, `steps` | Each assumption the plan depends on ([02](02-snapshot-and-model.md#assumptions)) |
+| `assumption` | `id`, `steps` | A1, A4 and A5 always; A2 and A3 when a step creates pods, with `steps` naming those steps (up to where the check stopped) |
 | `approval` | `required`, `reasons` | Proved |
 | `unchecked-text` | `field` (`ticket`, `rationale`), `text` | Each free-text field present |
 
@@ -60,24 +60,26 @@ Evidence holds the numbers behind an outcome, so the packet can show them. Each 
 
 | Rule | Evidence keys |
 | --- | --- |
-| `budget` | `deployment`, `lowestAvailable`, `needs`, `step`, `phase` (one entry per PDB, the first state with the lowest value; `step` is null if the value never drops below the snapshot's) |
-| `never-zero` | `deployment`, `lowestAvailable`, `step`, `phase` (only on failure, for the deployments that reached 0) |
-| `capacity` | `node`, `cpuFreeMilli`, `memoryFreeMiB`, `step` (the tightest node after first fit); on failure, `pod` that didn't fit |
-| `limits` | `maxUnschedulable`, `limitUnschedulable`, `minSchedulable`, `limitSchedulable`, with the step of each; on a static failure, the field and value |
-| `frame` | On failure: `extra` (changes not in the goal) and `missing` (goal changes that didn't happen), each as goal-change records |
-| `assertions` | `step`, `key`, `expected`, `actual` |
+| `budget` | `items`: one per PDB, by deployment: `deployment`, `lowestAvailable`, `needs`, `step`, `phase` (the first state with the lowest value; `step` is null if the value never drops below the snapshot's). On a failure fact: `deployment`, `lowestAvailable`, `needs` |
+| `never-zero` | On failure, `items`: `deployment`, `lowestAvailable`, `step`, `phase` for each deployment that reached 0 |
+| `capacity` | `node`, `cpuFreeMilli`, `memoryFreeMiB`, `step`: the schedulable node with the least free CPU (then memory) after any step. On a failure fact: the `deployment` whose pod didn't fit |
+| `limits` | `maxUnschedulable`, `maxUnschedulableStep`, `limitUnschedulable`, `minSchedulable`, `minSchedulableStep`, `limitSchedulable`. On a failure fact: `field`, `value` and `limit` |
+| `frame` | On pass: `changes` (the number of goal entries). On an end failure: `extra` (changes not in the goal) and `missing` (goal changes that didn't happen), each a list of `{object, field, container?, from, to}`. On a static failure: `reason` (`repeated`, `from-mismatch`, `no-change`) and `field` |
+| `assertions` | On pass: `count`. On a failure fact: `key`, `expected`, `actual` |
 | `scope`, `protected`, `no-orphans`, `cordon-first`, `settled`, `input` | `object` and a fixed reason code |
-| `rollback` | `innerRule`, `rollbackStep`, plus the inner rule's evidence; or `notRestored` records |
+| `rollback` | On pass: `restored` (the number of goal fields restored). On a failure fact at a rollback step: `innerRule` plus the inner rule's evidence; or, at the end, `notRestored` records |
 
 ## Example: a Refuted verdict (abridged)
 
 From [examples/drain-two-nodes](../../examples/drain-two-nodes/), the plan that drains n2 without waiting for the pods moved off n1:
 
 ```json
-{"type": "failure", "rule": "budget", "step": 4, "phase": "during",
- "evidence": {"deployment": "shop/checkout", "lowestAvailable": 1, "needs": 2}},
-{"type": "failure", "rule": "budget", "step": 4, "phase": "during",
+{"type": "failure", "rule": "budget", "step": 4, "phase": "during", "object": "deployment/shop/cart",
  "evidence": {"deployment": "shop/cart", "lowestAvailable": 0, "needs": 1}},
-{"type": "failure", "rule": "never-zero", "step": 4, "phase": "during",
+{"type": "failure", "rule": "budget", "step": 4, "phase": "during", "object": "deployment/shop/checkout",
+ "evidence": {"deployment": "shop/checkout", "lowestAvailable": 1, "needs": 2}},
+{"type": "failure", "rule": "never-zero", "step": 4, "phase": "during", "object": "deployment/shop/cart",
  "evidence": {"deployment": "shop/cart", "lowestAvailable": 0}}
 ```
+
+The full verdicts for the three examples are golden files: [examples/drain-two-nodes/verdict-*.json](../../examples/drain-two-nodes/).

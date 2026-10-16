@@ -33,26 +33,26 @@ type Change struct {
 
 // Step is one operation. Which parameters it may and must have depends on Op.
 type Step struct {
-	Op             string      `json:"op"`
-	Deployment     string      `json:"deployment"`
-	Node           string      `json:"node"`
-	Replicas       *int64      `json:"replicas"`
-	Container      string      `json:"container"`
-	Image          string      `json:"image"`
-	Deployments    []string    `json:"deployments"`
-	TimeoutSeconds *int64      `json:"timeoutSeconds"`
-	Pre            *Assertions `json:"pre"`
-	Post           *Assertions `json:"post"`
+	Op             string      `json:"op,omitempty"`
+	Deployment     string      `json:"deployment,omitempty"`
+	Node           string      `json:"node,omitempty"`
+	Replicas       *int64      `json:"replicas,omitempty"`
+	Container      string      `json:"container,omitempty"`
+	Image          string      `json:"image,omitempty"`
+	Deployments    []string    `json:"deployments,omitempty"`
+	TimeoutSeconds *int64      `json:"timeoutSeconds,omitempty"`
+	Pre            *Assertions `json:"pre,omitempty"`
+	Post           *Assertions `json:"post,omitempty"`
 }
 
 // Assertions are claims about the step's object, checked by the kernel and,
 // for pre, again by the executor against the live cluster.
 type Assertions struct {
-	Replicas      *int64  `json:"replicas"`
-	Image         *string `json:"image"`
-	Container     string  `json:"container"`
-	Unschedulable *bool   `json:"unschedulable"`
-	PodsOnNode    *int64  `json:"podsOnNode"`
+	Replicas      *int64  `json:"replicas,omitempty"`
+	Image         *string `json:"image,omitempty"`
+	Container     string  `json:"container,omitempty"`
+	Unschedulable *bool   `json:"unschedulable,omitempty"`
+	PodsOnNode    *int64  `json:"podsOnNode,omitempty"`
 }
 
 // Snapshot is the cluster state the fetcher recorded. Trusted, but still

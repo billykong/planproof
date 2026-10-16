@@ -1,6 +1,6 @@
 # Example: drain two nodes
 
-A four-node cluster with three deployments in `shop`, and three plans an agent might write for "upgrade nodes n1 and n2" (or just n1). The expected verdicts and packets were worked out by hand from the [spec](../../docs/spec/README.md); in phase 1 they become golden tests for the kernel and the renderer.
+A four-node cluster with three deployments in `shop`, and three plans an agent might write for "upgrade nodes n1 and n2" (or just n1). The expected verdicts and packets were worked out by hand from the [spec](../../docs/spec/README.md) before the kernel existed; the kernel's verdicts now match them as golden tests, and the packets become the renderer's golden tests.
 
 ## The cluster ([snapshot.json](snapshot.json))
 
@@ -34,4 +34,4 @@ Each node: 4000m CPU, 8192 MiB. Disruption budgets: checkout `minAvailable: 2`, 
 | 5 drain n2, after | both pending, first fit on n3 (n3: 2600m used, 1400m and 5568 MiB free) | 2 | 1 |
 | 6 wait | all ready | 3 | 2 |
 
-The plan and policy hashes in the packets are written `<plan>` and `<policy>` until the CLI exists: they're hashes of the JSON the CLI makes from the YAML.
+The kernel's verdicts are golden files, checked by `TestExamples` against the values above: [verdict-proved.json](verdict-proved.json), [verdict-no-wait.json](verdict-no-wait.json), [verdict-extra-change.json](verdict-extra-change.json). The plan and policy hashes are of the compact, key-sorted JSON the CLI makes from the YAML.

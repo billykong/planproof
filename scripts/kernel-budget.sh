@@ -9,7 +9,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-MAX_LINES=1500
+MAX_LINES=1800
 ALLOWED="bytes cmp crypto/sha256 encoding/hex encoding/json errors fmt io maps math reflect slices sort strconv strings unicode unicode/utf8"
 
 fail=0

@@ -1,5 +1,5 @@
 PLAN CHECK: drain-two-nodes
-Plan sha256:<plan>. Snapshot sha256:01d582c7f8de. Policy sha256:<policy>. Kernel 0.1.0.
+Plan sha256:290f90c50533. Snapshot sha256:01d582c7f8de. Policy sha256:7df1f0660a8b. Kernel 0.1.0.
 
 1. GOAL
    1. Stop new pods on node `n1`.
@@ -48,7 +48,7 @@ Plan sha256:<plan>. Snapshot sha256:01d582c7f8de. Policy sha256:<policy>. Kernel
 4. NOT CHECKED
    The kernel does not check that this goal is the correct goal for the request. You must check this.
    A1. The kernel thinks that pods that are ready now stay ready. Before each step, the runner examines the cluster again.
-   A2. The kernel does not check that new pods start. Steps 4 and 6 wait for them. If a wait takes too long, the runner stops the plan.
+   A2. The kernel does not check that the new pods from steps 3 and 5 start. If a wait takes too long, the runner stops the plan.
    A3. The kernel uses a simple model of the scheduler. The scheduler can put pods on different nodes.
    A4. The kernel thinks that nothing else changes these objects during the plan. If an object changes, the runner stops.
    A5. The kernel thinks that the snapshot is correct.

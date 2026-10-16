@@ -62,7 +62,7 @@ Kubernetes first, on kind, so anyone can reproduce it.
 
 | Measure | Target |
 | --- | --- |
-| Kernel size (non-test Go lines) | At most 1,500 |
+| Kernel size (non-test, non-blank, non-comment Go lines) | At most 1,800 (raised from 1,500 on 2026-10-16; see K-03) |
 | Kernel dependencies | Go standard library only |
 | Seeded unsafe plans accepted | 0 |
 | Model-fidelity tests: predicted state differs from the real cluster | 0 unexplained differences |

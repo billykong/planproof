@@ -1,0 +1,287 @@
+{
+  "apiVersion": "planproof/v0",
+  "kind": "Verdict",
+  "result": "Proved",
+  "kernelVersion": "0.1.0",
+  "planSha256": "sha256:290f90c50533b06bd92aefbef0821babe8bfebe128ae8792a8e58819a75427d2",
+  "snapshotSha256": "sha256:01d582c7f8de56cb623e5534474d6438c5ccaddd0f698cefadd4a691e777b625",
+  "policySha256": "sha256:7df1f0660a8b766fb6d46f10e1817f21252038c9bc401ff24078c244a705bf07",
+  "approvalRequired": true,
+  "facts": [
+    {
+      "type": "goal-change",
+      "object": "node/n1",
+      "field": "unschedulable",
+      "from": false,
+      "to": true
+    },
+    {
+      "type": "goal-change",
+      "object": "node/n2",
+      "field": "unschedulable",
+      "from": false,
+      "to": true
+    },
+    {
+      "type": "goal-change",
+      "object": "node/n1",
+      "field": "drained",
+      "from": false,
+      "to": true
+    },
+    {
+      "type": "goal-change",
+      "object": "node/n2",
+      "field": "drained",
+      "from": false,
+      "to": true
+    },
+    {
+      "type": "step",
+      "index": 1,
+      "params": {
+        "op": "cordon",
+        "node": "n1",
+        "pre": {
+          "unschedulable": false
+        }
+      }
+    },
+    {
+      "type": "step",
+      "index": 2,
+      "params": {
+        "op": "cordon",
+        "node": "n2",
+        "pre": {
+          "unschedulable": false
+        }
+      }
+    },
+    {
+      "type": "step",
+      "index": 3,
+      "params": {
+        "op": "drain",
+        "node": "n1"
+      }
+    },
+    {
+      "type": "step",
+      "index": 4,
+      "params": {
+        "op": "wait",
+        "deployments": [
+          "shop/checkout",
+          "shop/cart"
+        ],
+        "timeoutSeconds": 300
+      }
+    },
+    {
+      "type": "step",
+      "index": 5,
+      "params": {
+        "op": "drain",
+        "node": "n2"
+      }
+    },
+    {
+      "type": "step",
+      "index": 6,
+      "params": {
+        "op": "wait",
+        "deployments": [
+          "shop/checkout",
+          "shop/cart"
+        ],
+        "timeoutSeconds": 300
+      }
+    },
+    {
+      "type": "rollback-step",
+      "index": 1,
+      "params": {
+        "op": "uncordon",
+        "node": "n2"
+      }
+    },
+    {
+      "type": "rollback-step",
+      "index": 2,
+      "params": {
+        "op": "uncordon",
+        "node": "n1"
+      }
+    },
+    {
+      "type": "not-reversible",
+      "object": "node/n1",
+      "field": "drained"
+    },
+    {
+      "type": "not-reversible",
+      "object": "node/n2",
+      "field": "drained"
+    },
+    {
+      "type": "check",
+      "rule": "input",
+      "outcome": "pass"
+    },
+    {
+      "type": "check",
+      "rule": "scope",
+      "outcome": "pass"
+    },
+    {
+      "type": "check",
+      "rule": "protected",
+      "outcome": "pass"
+    },
+    {
+      "type": "check",
+      "rule": "limits",
+      "outcome": "pass",
+      "evidence": {
+        "limitSchedulable": 2,
+        "limitUnschedulable": 2,
+        "maxUnschedulable": 2,
+        "maxUnschedulableStep": 2,
+        "minSchedulable": 2,
+        "minSchedulableStep": 2
+      }
+    },
+    {
+      "type": "check",
+      "rule": "assertions",
+      "outcome": "pass",
+      "evidence": {
+        "count": 2
+      }
+    },
+    {
+      "type": "check",
+      "rule": "cordon-first",
+      "outcome": "pass"
+    },
+    {
+      "type": "check",
+      "rule": "no-orphans",
+      "outcome": "pass"
+    },
+    {
+      "type": "check",
+      "rule": "budget",
+      "outcome": "pass",
+      "evidence": {
+        "items": [
+          {
+            "deployment": "shop/cart",
+            "lowestAvailable": 1,
+            "needs": 1,
+            "phase": "during",
+            "step": 3
+          },
+          {
+            "deployment": "shop/checkout",
+            "lowestAvailable": 2,
+            "needs": 2,
+            "phase": "during",
+            "step": 3
+          },
+          {
+            "deployment": "shop/payments",
+            "lowestAvailable": 2,
+            "needs": 1,
+            "phase": "during",
+            "step": null
+          }
+        ]
+      }
+    },
+    {
+      "type": "check",
+      "rule": "never-zero",
+      "outcome": "pass"
+    },
+    {
+      "type": "check",
+      "rule": "capacity",
+      "outcome": "pass",
+      "evidence": {
+        "cpuFreeMilli": 1400,
+        "memoryFreeMiB": 5568,
+        "node": "n3",
+        "step": 5
+      }
+    },
+    {
+      "type": "check",
+      "rule": "settled",
+      "outcome": "pass"
+    },
+    {
+      "type": "check",
+      "rule": "frame",
+      "outcome": "pass",
+      "evidence": {
+        "changes": 4
+      }
+    },
+    {
+      "type": "check",
+      "rule": "rollback",
+      "outcome": "pass",
+      "evidence": {
+        "restored": 2
+      }
+    },
+    {
+      "type": "assumption",
+      "id": "A1"
+    },
+    {
+      "type": "assumption",
+      "id": "A2",
+      "steps": [
+        3,
+        5
+      ]
+    },
+    {
+      "type": "assumption",
+      "id": "A3",
+      "steps": [
+        3,
+        5
+      ]
+    },
+    {
+      "type": "assumption",
+      "id": "A4"
+    },
+    {
+      "type": "assumption",
+      "id": "A5"
+    },
+    {
+      "type": "approval",
+      "required": true,
+      "reasons": [
+        "drain",
+        "critical"
+      ]
+    },
+    {
+      "type": "unchecked-text",
+      "field": "ticket",
+      "text": "OPS-1042: upgrade nodes n1 and n2"
+    },
+    {
+      "type": "unchecked-text",
+      "field": "rationale",
+      "text": "Cordon both nodes first, so pods moved off n1 cannot land on n2."
+    }
+  ]
+}

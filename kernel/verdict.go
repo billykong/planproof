@@ -35,17 +35,28 @@ type Verdict struct {
 	Facts            []Fact `json:"facts"`
 }
 
-// Fact is one typed record of what the kernel found. Only the fields that
-// belong to its Type are set.
+// Fact is one typed record of what the kernel found (spec 05). Only the
+// fields that belong to its Type are set.
 type Fact struct {
-	Type     string         `json:"type"`
-	Rule     string         `json:"rule,omitempty"`
-	Outcome  string         `json:"outcome,omitempty"`
-	Step     *StepRef       `json:"step,omitempty"`
-	Phase    string         `json:"phase,omitempty"`
-	Trigger  string         `json:"trigger,omitempty"`
-	Object   string         `json:"object,omitempty"`
-	Evidence map[string]any `json:"evidence,omitempty"`
+	Type      string         `json:"type"`
+	Rule      string         `json:"rule,omitempty"`
+	Outcome   string         `json:"outcome,omitempty"`
+	Step      *StepRef       `json:"step,omitempty"`
+	Phase     string         `json:"phase,omitempty"`
+	Trigger   string         `json:"trigger,omitempty"`
+	Object    string         `json:"object,omitempty"`
+	Field     string         `json:"field,omitempty"`
+	Container string         `json:"container,omitempty"`
+	From      *Value         `json:"from,omitempty"`
+	To        *Value         `json:"to,omitempty"`
+	Index     int            `json:"index,omitempty"`
+	Params    *Step          `json:"params,omitempty"`
+	ID        string         `json:"id,omitempty"`
+	Steps     []int          `json:"steps,omitempty"`
+	Required  *bool          `json:"required,omitempty"`
+	Reasons   []string       `json:"reasons,omitempty"`
+	Text      string         `json:"text,omitempty"`
+	Evidence  map[string]any `json:"evidence,omitempty"`
 }
 
 // StepRef names where a fact applies: before the steps (0), a step (1..n),

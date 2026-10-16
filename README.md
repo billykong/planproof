@@ -6,7 +6,7 @@ An agent writes a plan (a goal and the steps to reach it). The kernel checks the
 
 The idea comes from proof assistants such as Lean: let the clever, untrusted part search, and trust only a checker small enough to read. Don't review the agent's plan; review the checker once, and the goal each time.
 
-Kubernetes first. Status: **phase 1, building the kernel**. Strict parsing, hashing and the kernel's budgets are done; the model and rules are next. See the [PRD status](docs/prd/README.md#status-at-a-glance).
+Kubernetes first. Status: **phase 1**. The kernel works: it checks plans against the model and rules, and its verdicts on the worked examples match the ones derived by hand. The review-packet renderer and the CLI are next. See the [PRD status](docs/prd/README.md#status-at-a-glance).
 
 ## Build and test
 
@@ -23,8 +23,8 @@ The kernel's answer to a plan that drains two nodes without waiting in between (
 
 ```text
 CAUTION: DO NOT APPROVE THIS PLAN.
-During step 4, only 1 `shop/checkout` pod is ready. The disruption budget for `shop/checkout` needs at least 2.
 During step 4, no `shop/cart` pods are ready. The disruption budget for `shop/cart` needs at least 1.
+During step 4, only 1 `shop/checkout` pod is ready. The disruption budget for `shop/checkout` needs at least 2.
 ```
 
 And to a plan whose every step is fine, but which also scales a deployment its goal doesn't mention ([full packet](examples/drain-two-nodes/packet-extra-change.txt)):

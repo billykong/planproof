@@ -19,12 +19,14 @@ Every rule has a short ID, used in facts and in the packet. Rules are checked at
 | `no-orphans` | Each state | A drain would evict a pod with no owner |
 | `budget` | Each state | For a PDB on deployment `d`: available(d) < `minAvailable`, or available(d) < replicas(d) − `maxUnavailable` |
 | `never-zero` | Each state | A deployment with replicas ≥ 1 in the snapshot has available 0, unless the goal sets its replicas to 0 and `allowScaleToZero` is true. This covers deployments with no PDB |
-| `capacity` | Each state | A pod the model creates has no first-fit placement |
+| `capacity` | Each state | A pod the model creates has no first-fit placement, including a rolling update's surge pods on top of the existing ones |
 | `settled` | End | A deployment still has `pending` or `rolling` pods: the plan ends without waiting for its own changes |
 | `frame` | Static and end | Static: a goal change's `from` differs from the snapshot, or equals its `to`, or a field repeats. End: the set of desired fields that differ from the snapshot is not exactly the goal, with the goal's `to` values |
 | `rollback` | End | The rollback, run from the final state, breaks a rule at any state, or leaves a reversible goal field (`replicas`, `image`, `unschedulable`) different from its `from` value |
 
 Rules are independent of each other and of the order they're listed in. At a failing step, the kernel reports every rule that fails there.
+
+**Only what the plan makes worse.** `budget`, `never-zero` and the each-state part of `limits` fail only when the plan makes the number worse than in the snapshot: available(d) below the snapshot's, or more nodes unschedulable (fewer schedulable) than in the snapshot. Otherwise one broken deployment or an already-cordoned node would block every plan, including the plan that fixes it. A budget already broken in the snapshot still fails the moment the plan lowers that deployment's availability further.
 
 ## Policy
 

@@ -3,8 +3,10 @@ package kernel
 import (
 	"bytes"
 	"encoding/json"
+	"flag"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -67,23 +69,62 @@ func outcomes(v Verdict) map[string]string {
 	return m
 }
 
-func TestExamplesParse(t *testing.T) {
+var update = flag.Bool("update", false, "rewrite the golden verdict files in examples/")
+
+// TestExamples checks the worked examples against the verdicts derived by
+// hand in examples/drain-two-nodes/README.md, then byte for byte against
+// the golden verdict files (K-32). Run with -update to rewrite the files,
+// and review the diff: a golden file is only as good as that review.
+func TestExamples(t *testing.T) {
 	snap, pol := load(t, "snapshot.json"), load(t, "policy.yaml")
-	for _, name := range []string{"plan-proved.yaml", "plan-no-wait.yaml", "plan-extra-change.yaml"} {
-		t.Run(name, func(t *testing.T) {
-			v := Check(snap, load(t, name), pol)
-			if got := outcomes(v)["input"]; got != outcomePass {
-				t.Fatalf("input: %s, facts %+v", got, v.Facts)
+	cases := []struct {
+		plan     string
+		result   Result
+		failures []string // rule@step
+	}{
+		{"plan-proved.yaml", Proved, nil},
+		{"plan-no-wait.yaml", Refuted, []string{"budget@4", "budget@4", "never-zero@4"}},
+		{"plan-extra-change.yaml", Refuted, []string{"frame@\"end\""}},
+	}
+	for _, c := range cases {
+		t.Run(c.plan, func(t *testing.T) {
+			v := Check(snap, load(t, c.plan), pol)
+			if v.Result != c.result {
+				t.Fatalf("result %s, want %s", v.Result, c.result)
 			}
-			// Until milestone 3, a well-formed plan is Unknown, never Proved.
-			if v.Result != Unknown {
-				t.Fatalf("result %s", v.Result)
+			if got := failures(v); !slices.Equal(got, c.failures) {
+				t.Fatalf("failures %v, want %v", got, c.failures)
 			}
-			if len(v.Facts) != len(Rules)+1 {
-				t.Fatalf("%d facts", len(v.Facts))
+			got, err := json.MarshalIndent(v, "", "  ")
+			if err != nil {
+				t.Fatal(err)
+			}
+			golden := filepath.Join(exampleDir, "verdict-"+strings.TrimSuffix(strings.TrimPrefix(c.plan, "plan-"), ".yaml")+".json")
+			if *update {
+				if err := os.WriteFile(golden, append(got, '\n'), 0o644); err != nil {
+					t.Fatal(err)
+				}
+			}
+			want, err := os.ReadFile(golden)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !bytes.Equal(append(got, '\n'), want) {
+				t.Fatalf("verdict differs from %s; run with -update and review the diff", golden)
 			}
 		})
 	}
+}
+
+func failures(v Verdict) []string {
+	var out []string
+	for _, f := range v.Facts {
+		if f.Type == "failure" {
+			step, _ := json.Marshal(f.Step)
+			out = append(out, f.Rule+"@"+string(step))
+		}
+	}
+	return out
 }
 
 func TestVerdictBindsHashes(t *testing.T) {
@@ -198,8 +239,9 @@ func TestDeterministic(t *testing.T) {
 	}
 }
 
-// FuzzCheck: no input panics the kernel, results are deterministic, and
-// nothing is Proved before the rules exist (K-13).
+// FuzzCheck: no input panics the kernel, results are deterministic, and a
+// Proved verdict is internally consistent: every check passed or doesn't
+// apply, and nothing failed (K-13).
 func FuzzCheck(f *testing.F) {
 	snap, pol := load(f, "snapshot.json"), load(f, "policy.yaml")
 	for _, name := range []string{"plan-proved.yaml", "plan-no-wait.yaml", "plan-extra-change.yaml"} {
@@ -207,13 +249,18 @@ func FuzzCheck(f *testing.F) {
 	}
 	f.Fuzz(func(t *testing.T, snap, plan, pol []byte) {
 		a := Check(snap, plan, pol)
-		if a.Result == Proved {
-			t.Fatal("Proved before the rules exist")
-		}
 		x, _ := json.Marshal(a)
 		y, _ := json.Marshal(Check(snap, plan, pol))
 		if !bytes.Equal(x, y) {
 			t.Fatal("not deterministic")
+		}
+		if a.Result != Proved {
+			return
+		}
+		for _, f := range a.Facts {
+			if f.Type == "failure" || f.Type == "unknown" || f.Type == "check" && f.Outcome != outcomePass && f.Outcome != outcomeNotApplicable {
+				t.Fatalf("Proved with %+v", f)
+			}
 		}
 	})
 }
