@@ -14,14 +14,17 @@ This folder is the product requirements document (PRD): what we're building, why
 | [areas/r-review-packet.md](areas/r-review-packet.md) | R: the review packet and its controlled language |
 | [areas/c-cluster.md](areas/c-cluster.md) | C: fetcher, executor and model-fidelity tests |
 | [areas/e-agent-and-evals.md](areas/e-agent-and-evals.md) | E: the agent loop, seeded plans and measurement |
+| [areas/t-cli.md](areas/t-cli.md) | T: the `planproof` command and strict YAML conversion |
 
 ## Status at a glance
 
 | Area | Status |
 | --- | --- |
-| Phase 0: PRD, spec, worked example | **Drafted** (2026-10-14) |
+| Phase 0: PRD, spec, worked example | **Done** (2026-10-14) |
+| Phase 1: kernel, renderer, CLI | **Done** (2026-10-16): exit criteria met |
 | K Kernel | **Phase 1 milestones 1-3 done**: budgets and CI; strict parsing and fuzzing; model, operations, rules and verdict, with golden examples. Open: K-25, K-26 |
 | R Review packet | **Phase 1 milestone 4 done**: renderer, word list, template lint, golden packets. Open: R-09, R-11 |
+| T CLI | **Done**: `check`, `render`, `hash`; strict YAML conversion. Open: an automated check for T-07 |
 | C Cluster | Planned |
 | E Agent and evals | Planned |
 

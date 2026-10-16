@@ -16,7 +16,7 @@ This is the normative definition of what the kernel accepts and how it decides. 
 
 - "Must", "must not" and "may" are requirements on the kernel unless stated otherwise.
 - All three inputs have `apiVersion: planproof/v0`. Any other version is rejected.
-- The kernel reads JSON. The CLI also accepts YAML for plans and policies and converts it to compact JSON with sorted keys before calling the kernel; examples here use YAML for readability.
+- The kernel reads JSON. The CLI also accepts YAML for plans and policies and converts it to compact JSON with sorted keys before calling the kernel; examples here use YAML for readability. The conversion is strict ([T-03](../prd/areas/t-cli.md)): one document; no anchors, aliases, merge keys, floats, timestamps or custom tags; no duplicate keys. Snapshots are JSON only.
 - Hashes are SHA-256 of the exact bytes of the JSON the kernel received, written `sha256:<hex>`.
 - Deployments are named `namespace/name`. Nodes are named by name.
 - Quantities are integers: CPU in millicores (`cpuMilli`), memory in MiB (`memoryMiB`), pod slots (`pods`). The fetcher converts and rounds requests up.

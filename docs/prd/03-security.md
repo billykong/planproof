@@ -18,6 +18,7 @@ The attacker's best tool is the agent: a prompt injection in a ticket, log or to
 | T10 | Parser confusion | Duplicate keys, unknown fields, huge numbers, deep nesting | Strict JSON decoding, size limits, rejection of duplicates and unknown fields; fuzz tests |
 | T11 | Kernel bug | An off-by-one in a budget check | Size budget, coverage, mutation testing, property tests, differential tests (and later a Lean model) |
 | T12 | Policy weakened quietly | A limit raised in the policy file | Policy hash in every verdict and packet; policy changes reviewed like code |
+| T13 | YAML means something other than what the reviewer read | An alias or merge key pulls in a hidden value; `on` or `no` read as booleans; a duplicate key where the second one wins | Strict, deterministic conversion with no anchors, aliases, merge keys, floats, custom tags or duplicate keys (T-03); hashes of the converted JSON (T-04) |
 
 ## Security requirements
 

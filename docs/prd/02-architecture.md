@@ -55,7 +55,7 @@ Not trusted: the agent, the model behind it, the plan's free text, and any serve
 
 1. The fetcher writes `snapshot.json` (and its SHA-256).
 2. The agent reads the ticket and the snapshot and writes `plan.yaml`, naming the snapshot hash.
-3. `planproof check --snapshot snapshot.json --plan plan.yaml --policy policy.yaml` prints the verdict JSON; `planproof render` prints the packet.
+3. `planproof check --snapshot snapshot.json --plan plan.yaml --policy policy.yaml` prints the verdict JSON and exits 0, 1 or 2 for Proved, Refuted or Unknown; `planproof render` prints the packet ([T area](areas/t-cli.md)).
 4. On Refuted or Unknown, the agent may revise and resubmit. The facts tell it which step and rule failed.
 5. On Proved, if the policy requires approval, a human approves the plan hash after reading the packet.
 6. The executor re-fetches, checks drift, and runs the steps with their runtime guards.
@@ -76,7 +76,8 @@ Not trusted: the agent, the model behind it, the plan's free text, and any serve
 | `kernel/` | The kernel: types, parser, model, rules, verdict. Standard library only |
 | `render/` | The review packet renderer, its templates and word list |
 | `internal/testcases/` | The table of plans the kernel and renderer tests share |
-| `cmd/planproof/` | CLI: `check`, `render`, `hash`; YAML is converted to JSON here, outside the kernel |
+| `cmd/planproof/` | CLI: `check`, `render`, `hash` |
+| `internal/yamljson/` | Strict YAML-to-JSON conversion for plans and policies, outside the kernel |
 | `fetch/`, `exec/` | Fetcher and executor (client-go) |
 | `docs/prd/`, `docs/spec/` | This PRD; the normative spec |
 | `examples/` | Worked examples with snapshot, policy, plans and expected packets |

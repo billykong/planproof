@@ -22,9 +22,9 @@ func Check(snapshot, plan, policy []byte) Verdict {
 		APIVersion:     apiVersion,
 		Kind:           "Verdict",
 		KernelVersion:  KernelVersion,
-		PlanSHA256:     hash(plan),
-		SnapshotSHA256: hash(snapshot),
-		PolicySHA256:   hash(policy),
+		PlanSHA256:     Hash(plan),
+		SnapshotSHA256: Hash(snapshot),
+		PolicySHA256:   Hash(policy),
 	}
 	in, err := parse(snapshot, plan, policy)
 	if err == nil && in.plan.Snapshot != v.SnapshotSHA256 {
@@ -290,7 +290,8 @@ func parse(snapshot, plan, policy []byte) (*inputs, *inputError) {
 	return in, nil
 }
 
-func hash(b []byte) string {
+// Hash is how the kernel names an input: sha256:<hex> of its exact bytes.
+func Hash(b []byte) string {
 	sum := sha256.Sum256(b)
 	return "sha256:" + hex.EncodeToString(sum[:])
 }

@@ -3,10 +3,10 @@ export PATH := $(HOME)/.local/go/bin:$(PATH)
 
 FUZZTIME ?= 30s
 
-.PHONY: ci fmt-check vet test budget fuzz cover
+.PHONY: ci fmt-check vet test budget fuzz cover build examples
 
 ## ci: everything CI runs on a pull request
-ci: fmt-check vet test budget fuzz
+ci: fmt-check vet test budget cover examples fuzz
 
 fmt-check:
 	@test -z "$$(gofmt -l .)" || { gofmt -l .; echo "run gofmt -w ."; exit 1; }
@@ -26,5 +26,24 @@ budget:
 fuzz:
 	go test ./kernel -run='^$$' -fuzz=FuzzCheck -fuzztime=$(FUZZTIME) -fuzzminimizetime=2s
 
+## cover: kernel statement coverage, failing below COVER_MIN percent
+COVER_MIN ?= 95
 cover:
-	go test -count=1 -coverprofile=coverage.out ./kernel && go tool cover -func=coverage.out | tail -1
+	@mkdir -p bin && go test -count=1 -coverprofile=bin/coverage.out ./kernel >/dev/null
+	@pct=$$(go tool cover -func=bin/coverage.out | awk '/^total:/ {sub("%","",$$3); print $$3}'); \
+	echo "kernel coverage: $$pct% (minimum $(COVER_MIN)%)"; \
+	awk -v p=$$pct -v m=$(COVER_MIN) 'BEGIN { exit !(p >= m) }' || { echo "FAIL: kernel coverage below $(COVER_MIN)%"; exit 1; }
+
+build:
+	go build -o bin/planproof ./cmd/planproof
+
+## examples: the built CLI on the worked examples reproduces the golden
+## verdicts and packets byte for byte (T-06)
+EX := examples/drain-two-nodes
+examples: build
+	@set -e; for p in proved no-wait extra-change; do \
+	  bin/planproof check --snapshot $(EX)/snapshot.json --plan $(EX)/plan-$$p.yaml --policy $(EX)/policy.yaml > bin/verdict-$$p.json || [ $$? -le 2 ]; \
+	  diff -u $(EX)/verdict-$$p.json bin/verdict-$$p.json; \
+	  bin/planproof render bin/verdict-$$p.json | diff -u $(EX)/packet-$$p.txt -; \
+	  echo "examples: $$p matches"; \
+	done

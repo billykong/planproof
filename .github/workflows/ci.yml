@@ -20,5 +20,5 @@ jobs:
     - uses: actions/setup-go@v6
       with:
         go-version-file: go.mod
-    - run: make fmt-check vet test budget
+    - run: make fmt-check vet test budget cover examples
     - run: make fuzz FUZZTIME=60s

@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"sigs.k8s.io/yaml"
+	"github.com/billykong/planproof/internal/yamljson"
 )
 
 const exampleDir = "../examples/drain-two-nodes"
@@ -24,7 +24,7 @@ func load(t testing.TB, name string) []byte {
 		t.Fatal(err)
 	}
 	if strings.HasSuffix(name, ".yaml") {
-		if b, err = yaml.YAMLToJSON(b); err != nil {
+		if b, err = yamljson.Convert(b); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -133,7 +133,7 @@ func TestVerdictBindsHashes(t *testing.T) {
 	if v.SnapshotSHA256 != "sha256:01d582c7f8de56cb623e5534474d6438c5ccaddd0f698cefadd4a691e777b625" {
 		t.Fatalf("snapshot hash %s", v.SnapshotSHA256)
 	}
-	if v.PlanSHA256 != hash(plan) || v.PolicySHA256 != hash(pol) || v.KernelVersion != KernelVersion {
+	if v.PlanSHA256 != Hash(plan) || v.PolicySHA256 != Hash(pol) || v.KernelVersion != KernelVersion {
 		t.Fatalf("binding: %+v", v)
 	}
 }
@@ -204,7 +204,7 @@ func TestInputRejected(t *testing.T) {
 				s = c.snap
 				// A changed snapshot has a new hash; keep the plan bound to it,
 				// so the case tests the snapshot and not the binding.
-				p = edit(t, plan, func(m map[string]any) { m["snapshot"] = hash(s) })
+				p = edit(t, plan, func(m map[string]any) { m["snapshot"] = Hash(s) })
 			}
 			if c.plan != nil {
 				p = c.plan

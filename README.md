@@ -6,15 +6,21 @@ An agent writes a plan (a goal and the steps to reach it). The kernel checks the
 
 The idea comes from proof assistants such as Lean: let the clever, untrusted part search, and trust only a checker small enough to read. Don't review the agent's plan; review the checker once, and the goal each time.
 
-Kubernetes first. Status: **phase 1**. The kernel checks plans against the model and rules, and the renderer turns its verdicts into review packets; on the worked examples both match what was derived by hand before the code existed. The CLI is next. See the [PRD status](docs/prd/README.md#status-at-a-glance).
+Kubernetes first. Status: **phase 1 done**: the kernel, the review-packet renderer and the CLI work, and on the worked examples they reproduce the verdicts and packets derived by hand before the code existed. Next: the fetcher and executor on a kind cluster (phase 2). See the [PRD status](docs/prd/README.md#status-at-a-glance).
 
-## Build and test
+## Try it
 
 Needs Go (see `go.mod`).
 
 ```bash
-make ci        # gofmt, vet, tests, the kernel's budgets, 30 s of fuzzing
-make budget    # kernel size, import allowlist, no goroutines or I/O
+make build
+bin/planproof check --snapshot examples/drain-two-nodes/snapshot.json --plan examples/drain-two-nodes/plan-no-wait.yaml --policy examples/drain-two-nodes/policy.yaml --output packet
+```
+
+`check` prints the verdict as JSON (or, with `--output packet`, the packet a person reads) and exits 0 for Proved, 1 for Refuted, 2 for Unknown. `render` turns a saved verdict into a packet; `hash` prints the hash the kernel computes for a file, to put a snapshot's hash in a plan.
+
+```bash
+make ci        # gofmt, vet, tests, kernel budgets and coverage, the examples end to end, 30 s of fuzzing
 ```
 
 ## Example

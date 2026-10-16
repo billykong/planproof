@@ -40,7 +40,7 @@ Status: **Done for phase 1 milestones 1-3**: budgets and CI; strict parsing, has
 | K-23 | The `frame` rule compares the final desired fields with the snapshot and requires exactly the goal. Tested with extra changes, missing changes and changes that cancel out (scale up then down). | Must | **Done**: `TestRules` ("frame: …" cases) and `TestExamples` (plan-extra-change) |
 | K-24 | The rollback is checked as a plan from the final state, and non-reversible fields are reported. | Must | **Done**: `TestRules` ("rollback: …" cases) and `TestExamples` (not-reversible facts in plan-proved) |
 | K-25 | Soundness property test: for random small clusters and plans, a brute-force checker that enumerates every placement agrees with the kernel whenever the kernel says Proved. | Should | Planned |
-| K-26 | Full branch coverage of `kernel/`; mutation testing finds no surviving mutant in rule code. | Should | **Partial**: 98% statement coverage (`make cover`); branch coverage and mutation testing not yet measured |
+| K-26 | Full branch coverage of `kernel/`; mutation testing finds no surviving mutant in rule code. | Should | **Partial**: statement coverage enforced at 95% or more in CI (`make cover`, 97% now); branch coverage and mutation testing not yet measured |
 
 ### Output
 

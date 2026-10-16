@@ -14,7 +14,7 @@ import (
 	"runtime"
 	"strings"
 
-	"sigs.k8s.io/yaml"
+	"github.com/billykong/planproof/internal/yamljson"
 )
 
 // Case is a variation on the drain-two-nodes example. Want is the expected
@@ -41,7 +41,7 @@ func Load(name string) []byte {
 		panic(err)
 	}
 	if strings.HasSuffix(name, ".yaml") {
-		if b, err = yaml.YAMLToJSON(b); err != nil {
+		if b, err = yamljson.Convert(b); err != nil {
 			panic(err)
 		}
 	}
@@ -72,7 +72,7 @@ func Inputs(c Case) (snap, plan, pol []byte) {
 	if c.Pol != nil {
 		pol = Edit(pol, c.Pol)
 	}
-	body, err := yaml.YAMLToJSON([]byte(c.Plan))
+	body, err := yamljson.Convert([]byte(c.Plan))
 	if err != nil {
 		panic(err)
 	}
