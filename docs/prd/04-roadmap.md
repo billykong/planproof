@@ -38,7 +38,7 @@ flowchart LR
 ### Phase 2
 1. **Done.** Fetcher, tested against fixtures applied to kind (`make kind-test`).
 2. **Done.** Executor, with runtime guards and an RBAC test (`cmd/planproof-exec`; `make kind-test`).
-3. Model-fidelity tests: each operation and each example plan run on kind, observed states compared with predictions.
+3. **Done.** Model-fidelity tests: each operation and the example plans run on kind, observed states compared with predictions ([results/kind-test.txt](../../results/kind-test.txt)).
 4. Translation check against the API audit log.
 
 ### Phase 3

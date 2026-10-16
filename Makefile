@@ -1,3 +1,5 @@
+SHELL := /bin/bash
+
 # Go from scripts/setup or ~/.local/go, as in safe-ops-agent-k8s.
 export PATH := $(HOME)/.local/go/bin:$(PATH)
 
@@ -67,5 +69,8 @@ kind-down:
 	kind delete cluster --name $(CLUSTER) --kubeconfig $(KCFG)
 
 ## kind-test: the tests that need the lab cluster (make kind-up first)
+## The output, with the model-fidelity numbers (predicted vs real lowest
+## ready pods), goes to results/kind-test.txt: evidence is generated, not typed.
 kind-test:
-	PLANPROOF_KUBECONFIG=$(KCFG) go test ./test/kind -count=1 -v -timeout 15m
+	@mkdir -p results
+	set -o pipefail; PLANPROOF_KUBECONFIG=$(KCFG) go test ./test/kind -count=1 -v -timeout 20m 2>&1 | tee results/kind-test.txt

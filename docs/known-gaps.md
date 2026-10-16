@@ -31,3 +31,11 @@ Weaknesses we know about and have not closed, by stable ID. A gap is closed by a
 **What:** before the first step, the executor compares the nodes the plan names, the pods on them, the deployments it names or moves, and the budgets in their namespaces. A change elsewhere (for example a new pod scheduled onto a node the plan will drain later) isn't caught by that check.
 
 **Mitigations now:** every node a plan drains is cordoned first (rule `cordon-first`), so no new pods land on it; the drain refuses any pod that isn't a Deployment's; every write carries a `resourceVersion` precondition.
+
+## GAP-05: the fidelity tests sample every 100 ms
+
+**What:** the model-fidelity tests (C-20, C-21) find the real lowest number of ready pods by polling every 100 ms. A dip shorter than that can be missed.
+
+**Why it matters only one way:** the tests check that the real lowest is at least the predicted lowest. A missed dip can hide a failure, never invent one.
+
+**Options:** count from a watch on pods instead of polling, so every readiness change is seen.

@@ -99,22 +99,32 @@ func (l *lab) nodeWithWeb() string {
 	return ""
 }
 
-// inputs builds a plan (goal, steps, rollback as YAML-like Go values) bound
-// to the snapshot, and a policy that manages the fixture and the workers.
+// inputs builds a plan bound to the snapshot, and a policy that manages
+// the fixture and the workers, and requires the kernel to prove it.
 func (l *lab) inputs(goal, steps, rollback []map[string]any) executor.Inputs {
-	plan, _ := json.Marshal(map[string]any{"apiVersion": "planproof/v0", "kind": "Plan", "metadata": map[string]any{"name": "lab"},
-		"snapshot": kernel.Hash(l.snap), "goal": goal, "steps": steps, "rollback": rollback})
-	policy, _ := json.Marshal(map[string]any{"apiVersion": "planproof/v0", "kind": "Policy",
-		"managedNamespaces": []string{l.ns}, "managedNodes": []string{"planproof-worker", "planproof-worker2", "planproof-worker3", "planproof-worker4"},
-		"protectedDeployments": []string{}, "criticalDeployments": []string{}, "approvalRequiredFor": []string{"drain"},
-		"limits": map[string]any{"maxReplicas": 10, "maxUnschedulableNodes": 1, "minSchedulableNodes": 0, "maxWaitSeconds": 300,
-			"requireImageDigest": false, "allowScaleToZero": false}})
-	in := executor.Inputs{Snapshot: l.snap, Plan: plan, Policy: policy}
-	if v := kernel.Check(in.Snapshot, in.Plan, in.Policy); v.Result != kernel.Proved {
+	in, v := planInputs(l.snap, l.ns, []string{"drain"}, goal, steps, rollback)
+	if v.Result != kernel.Proved {
 		l.t.Fatalf("the test plan isn't Proved: %s %+v", v.Result, v.Facts)
 	}
 	return in
 }
+
+// planInputs builds a plan (goal, steps, rollback as Go values) bound to a
+// snapshot, and a policy that manages namespace ns and the four workers,
+// and returns the kernel's verdict on them.
+func planInputs(snap []byte, ns string, approvalFor []string, goal, steps, rollback []map[string]any) (executor.Inputs, kernel.Verdict) {
+	plan, _ := json.Marshal(map[string]any{"apiVersion": "planproof/v0", "kind": "Plan", "metadata": map[string]any{"name": "lab"},
+		"snapshot": kernel.Hash(snap), "goal": goal, "steps": steps, "rollback": rollback})
+	policy, _ := json.Marshal(map[string]any{"apiVersion": "planproof/v0", "kind": "Policy",
+		"managedNamespaces": []string{ns}, "managedNodes": workers,
+		"protectedDeployments": []string{}, "criticalDeployments": []string{}, "approvalRequiredFor": approvalFor,
+		"limits": map[string]any{"maxReplicas": 20, "maxUnschedulableNodes": 2, "minSchedulableNodes": 0, "maxWaitSeconds": 300,
+			"requireImageDigest": false, "allowScaleToZero": false}})
+	in := executor.Inputs{Snapshot: snap, Plan: plan, Policy: policy}
+	return in, kernel.Check(in.Snapshot, in.Plan, in.Policy)
+}
+
+var workers = []string{"planproof-worker", "planproof-worker2", "planproof-worker3", "planproof-worker4"}
 
 func (l *lab) runner() *executor.Runner {
 	return &executor.Runner{Client: as(l.t, l.cfg, executorSA), StepTimeout: 90 * time.Second, Poll: time.Second}

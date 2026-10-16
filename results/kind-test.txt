@@ -1,0 +1,59 @@
+=== RUN   TestExecutorRBAC
+--- PASS: TestExecutorRBAC (1.40s)
+=== RUN   TestExecuteDrain
+--- PASS: TestExecuteDrain (9.19s)
+=== RUN   TestExecuteRefusesWithoutApproval
+--- PASS: TestExecuteRefusesWithoutApproval (8.05s)
+=== RUN   TestExecuteStopsOnDrift
+--- PASS: TestExecuteStopsOnDrift (8.14s)
+=== RUN   TestExecuteStopsOnConflict
+--- PASS: TestExecuteStopsOnConflict (8.09s)
+=== RUN   TestExecuteStopsOnLiveAssertion
+--- PASS: TestExecuteStopsOnLiveAssertion (8.18s)
+=== RUN   TestExecuteWaitTimeout
+--- PASS: TestExecuteWaitTimeout (18.10s)
+=== RUN   TestFetcherRBAC
+--- PASS: TestFetcherRBAC (0.80s)
+=== RUN   TestFetchFixture
+--- PASS: TestFetchFixture (8.07s)
+=== RUN   TestFidelityOperations
+=== RUN   TestFidelityOperations/rollout-restart,_surge_first
+    fidelity_test.go:174: web   predicted lowest 4, real lowest 4
+    fidelity_test.go:174: api   predicted lowest 4, real lowest 4
+=== RUN   TestFidelityOperations/rollout-restart,_one_unavailable
+    fidelity_test.go:178: web   predicted lowest 4, real lowest 4
+    fidelity_test.go:178: api   predicted lowest 3, real lowest 3
+=== RUN   TestFidelityOperations/scale_down
+    fidelity_test.go:182: web   predicted lowest 2, real lowest 2
+    fidelity_test.go:182: api   predicted lowest 4, real lowest 4
+=== RUN   TestFidelityOperations/scale_up
+    fidelity_test.go:186: web   predicted lowest 2, real lowest 2
+    fidelity_test.go:186: api   predicted lowest 4, real lowest 4
+=== RUN   TestFidelityOperations/cordon,_drain_and_uncordon
+    fidelity_test.go:192: web   predicted lowest 4, real lowest 4
+    fidelity_test.go:192: api   predicted lowest 3, real lowest 3
+--- PASS: TestFidelityOperations (23.06s)
+    --- PASS: TestFidelityOperations/rollout-restart,_surge_first (4.06s)
+    --- PASS: TestFidelityOperations/rollout-restart,_one_unavailable (4.16s)
+    --- PASS: TestFidelityOperations/scale_down (1.05s)
+    --- PASS: TestFidelityOperations/scale_up (2.05s)
+    --- PASS: TestFidelityOperations/cordon,_drain_and_uncordon (2.30s)
+=== RUN   TestFidelityExample
+    fidelity_test.go:279: no-wait plan: the kernel says Refuted; the Eviction API refused 1 evictions
+    fidelity_test.go:291: checkout predicted lowest 3, real lowest 3
+    fidelity_test.go:291: cart  predicted lowest 1, real lowest 1
+--- PASS: TestFidelityExample (10.43s)
+=== RUN   TestFidelityCapacity
+    fidelity_test.go:304: big   predicted lowest 4, real lowest 4
+    fidelity_test.go:326: scale to 9: the kernel says no room; 1 pod(s) Pending on the real cluster
+--- PASS: TestFidelityCapacity (10.45s)
+=== RUN   TestUnknownTriggersAreReal
+=== RUN   TestUnknownTriggersAreReal/hpa:_another_actor_changes_replicas
+    fidelity_test.go:397: the HPA scaled web from 1 to 3 on its own: a plan scaling to 2 would not end at 2
+=== RUN   TestUnknownTriggersAreReal/placement-rules:_a_moved_pod_has_nowhere_to_go
+    fidelity_test.go:435: with the rule hidden the kernel says Proved; on the cluster 1 moved pod(s) stay Pending
+--- PASS: TestUnknownTriggersAreReal (15.31s)
+    --- PASS: TestUnknownTriggersAreReal/hpa:_another_actor_changes_replicas (7.14s)
+    --- PASS: TestUnknownTriggersAreReal/placement-rules:_a_moved_pod_has_nowhere_to_go (8.17s)
+PASS
+ok  	github.com/billykong/planproof/test/kind	129.292s

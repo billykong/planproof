@@ -2,7 +2,7 @@
 
 **Goal:** connect the kernel to a real cluster without widening what you must trust: a read-only fetcher that writes the snapshot, an executor that runs only Proved plans and stops on any surprise, and tests that compare the kernel's model with what Kubernetes actually does. Covers goal G5.
 
-Status: **In progress**: phase 2 milestones 1-2 (fetcher, executor) done. Runs on kind (1 control plane, 4 workers, about 2 CPUs and 3 GiB allocatable each) on WSL2: `make kind-up`, then `make kind-test`. The kind tests don't run in CI yet.
+Status: **In progress**: phase 2 milestones 1-3 (fetcher, executor, model fidelity) done; the translation check (C-17) is next. Runs on kind (1 control plane, 4 workers, about 2 CPUs and 3 GiB allocatable each) on WSL2: `make kind-up`, then `make kind-test`. The kind tests don't run in CI yet.
 
 ## User stories
 
@@ -37,7 +37,7 @@ Status: **In progress**: phase 2 milestones 1-2 (fetcher, executor) done. Runs o
 
 | ID | Requirement | Priority | Status |
 | --- | --- | --- | --- |
-| C-20 | For each operation, a kind test runs it and compares the observed state (desired fields, ready counts, the minimum ready count sampled during the step) with the kernel's During and After states. | Must | Planned |
-| C-21 | Each example plan runs on kind; the minimum ready count per deployment observed during the run is never below the kernel's predicted lowest. | Must | Planned |
-| C-22 | Each Unknown trigger has a kind fixture showing the behaviour the model would get wrong (e.g. an HPA changing replicas mid-plan). | Should | Planned |
+| C-20 | For each operation, a kind test runs it and compares the observed state (desired fields, ready counts, the minimum ready count sampled during the step) with the kernel's During and After states. | Must | **Done**: `TestFidelityOperations` on kind (rollout restart with surge and with one unavailable, scale down, scale up, cordon/drain/uncordon): the real lowest never fell below the predicted lowest, and equalled it in every case; After states via each plan's waits and `frame`. Numbers: [results/kind-test.txt](../../../results/kind-test.txt). Limit: [GAP-05](../../known-gaps.md#gap-05-the-fidelity-tests-sample-every-100-ms) |
+| C-21 | Each example plan runs on kind; the minimum ready count per deployment observed during the run is never below the kernel's predicted lowest. | Must | **Done**: `TestFidelityExample` (the proved plan: real lowest = predicted; the refuted no-wait plan: the cluster's Eviction API refused an eviction, agreeing with the kernel). `TestFidelityCapacity` checks the scheduler-fit assumption (A3) both ways: 8 pods the kernel says fit are placed, a 9th it says doesn't fit stays Pending |
+| C-22 | Each Unknown trigger has a kind fixture showing the behaviour the model would get wrong (e.g. an HPA changing replicas mid-plan). | Should | **Partial**: 2 of 8 triggers in `TestUnknownTriggersAreReal`: `hpa` (an HPA changes replicas on its own) and `placement-rules` (with required anti-affinity hidden, the kernel would say Proved; on the cluster the moved pod stays Pending) |
 | C-23 | Known differences between model and cluster are listed in `docs/known-gaps.md` with an ID, like `safe-ops-agent-k8s`. | Must | **Done** for the gaps found so far: [docs/known-gaps.md](../../known-gaps.md) (GAP-01 to GAP-04); model-versus-cluster differences are added as milestone 3 finds them |
