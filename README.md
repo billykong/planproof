@@ -6,7 +6,7 @@ An agent writes a plan (a goal and the steps to reach it). The kernel checks the
 
 The idea comes from proof assistants such as Lean: let the clever, untrusted part search, and trust only a checker small enough to read. Don't review the agent's plan; review the checker once, and the goal each time.
 
-Kubernetes first. Status: **phase 1 done**: the kernel, the review-packet renderer and the CLI work, and on the worked examples they reproduce the verdicts and packets derived by hand before the code existed. Next: the fetcher and executor on a kind cluster (phase 2). See the [PRD status](docs/prd/README.md#status-at-a-glance).
+Kubernetes first. Status: **phases 1 and 2 done**. The kernel, the review-packet renderer and the CLI reproduce the verdicts and packets derived by hand before the code existed. On a kind cluster, a fetcher writes snapshots and an executor runs proved plans with live guards. Run for real, plans never did worse than the kernel predicted (in every case the real lowest matched the prediction exactly), and the API audit log shows the executor wrote exactly what the plan compiled to. Next: an agent writing plans, and measurement (phase 3). See the [PRD status](docs/prd/README.md#status-at-a-glance).
 
 ## Try it
 
@@ -28,7 +28,9 @@ The fetcher and the cluster tests need a kind cluster. It gets its own kubeconfi
 ```bash
 make kind-up     # 1 control plane + 4 workers, and the components' RBAC
 make kind-test   # fetcher and executor on the cluster: permissions both ways, a real drain,
-                 # and every way a run must stop (drift, conflict, live assertion, timeout)
+                 # and every way a run must stop (drift, conflict, live assertion, timeout);
+                 # model fidelity (predicted vs real, in results/kind-test.txt); the audit-log
+                 # translation check
 ```
 
 ## Example

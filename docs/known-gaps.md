@@ -10,7 +10,9 @@ Weaknesses we know about and have not closed, by stable ID. A gap is closed by a
 
 **Mitigations now:** `Compile` is pure and unit-tested per operation (C-11); the executor runs no code from the plan.
 
-**Options:** a ValidatingAdmissionPolicy that allows the executor's patches to change only the fields `Compile` can produce (CEL can compare `object` and `oldObject`); and the translation check against the API audit log (C-17), which detects rather than prevents.
+**Detected now:** the translation check (C-17, `executor.CheckTranslation`) compares the executor's writes in the API audit log, patch bodies included, with `Compile`'s output; `TestTranslationCheck` shows a label patch made with the executor's identity caught.
+
+**Options to prevent it:** a ValidatingAdmissionPolicy that allows the executor's patches to change only the fields `Compile` can produce (CEL can compare `object` and `oldObject`).
 
 ## GAP-02: approval is a flag, not an authenticated person
 

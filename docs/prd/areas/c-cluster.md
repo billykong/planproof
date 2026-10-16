@@ -2,7 +2,7 @@
 
 **Goal:** connect the kernel to a real cluster without widening what you must trust: a read-only fetcher that writes the snapshot, an executor that runs only Proved plans and stops on any surprise, and tests that compare the kernel's model with what Kubernetes actually does. Covers goal G5.
 
-Status: **In progress**: phase 2 milestones 1-3 (fetcher, executor, model fidelity) done; the translation check (C-17) is next. Runs on kind (1 control plane, 4 workers, about 2 CPUs and 3 GiB allocatable each) on WSL2: `make kind-up`, then `make kind-test`. The kind tests don't run in CI yet.
+Status: **Done for phase 2** (fetcher, executor, model fidelity, translation check). Open: C-22 has 2 of 8 triggers; the gaps in [known-gaps.md](../../known-gaps.md). Runs on kind (1 control plane, 4 workers, about 2 CPUs and 3 GiB allocatable each) on WSL2: `make kind-up`, then `make kind-test`. The kind tests don't run in CI yet.
 
 ## User stories
 
@@ -31,7 +31,7 @@ Status: **In progress**: phase 2 milestones 1-3 (fetcher, executor, model fideli
 | C-14 | Drains with the Eviction API only, never pod deletion (SEC-07). | Must | **Done**: `TestExecuteDrain` on kind (only evictions); the executor has no `delete` on pods (`TestExecutorRBAC`) |
 | C-15 | A `wait` that times out stops the run, records the state, and offers the checked rollback to a person; it never rolls back on its own in v0. | Must | **Done**: `TestExecuteWaitTimeout` on kind (a rollout that never gets ready: stopped at the wait, rollback offered in the report, not run) |
 | C-16 | RBAC limited to the seven operations (SEC-06). | Must | **Done**: [deploy/rbac/executor.yaml](../../../deploy/rbac/executor.yaml); `TestExecutorRBAC` (5 allowed, 12 denied). Limit: [GAP-01](../../known-gaps.md#gap-01-the-executor-can-patch-any-field-of-a-node-or-deployment) |
-| C-17 | Translation check: after a run, the API audit log entries for the executor's identity match `compile(plan)` exactly. | Should | Planned |
+| C-17 | Translation check: after a run, the API audit log entries for the executor's identity match `compile(plan)` exactly. | Should | **Done**: `executor.CheckTranslation` (each write the run made, with each patch's body, against `Compile`; ignores reads, failed requests and other identities); `TestCheckTranslation` (extra write, patch touching other fields, missing write, extra eviction) and `TestTranslationCheck` on kind with the API audit log on (`scripts/enable-audit.sh`): a real run matches exactly, and a label patch made with the executor's identity is caught |
 
 ### Model fidelity
 

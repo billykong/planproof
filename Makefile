@@ -63,6 +63,7 @@ kind-up:
 	@kind get clusters 2>/dev/null | grep -qx $(CLUSTER) || kind create cluster --config cluster/kind.yaml --kubeconfig $(KCFG)
 	@kind export kubeconfig --name $(CLUSTER) --kubeconfig $(KCFG) >/dev/null
 	$(KUBECTL) wait --for=condition=Ready nodes --all --timeout=180s
+	./scripts/enable-audit.sh
 	$(KUBECTL) apply -f deploy/rbac/
 
 kind-down:

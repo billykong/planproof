@@ -16,7 +16,7 @@ flowchart LR
 | --- | --- | --- |
 | 0 | This PRD, the [spec](../spec/README.md), the worked example | The example's expected verdicts and packets are written by hand and agree with the spec |
 | 1 | Kernel, renderer, CLI (K, R, T areas). **Done** 2026-10-16 | The worked example passes as golden tests; size, dependency and coverage budgets enforced in CI; every rule has an accept and a reject test |
-| 2 | Fetcher, executor, model-fidelity tests on kind (C area) | Each operation's predicted state matches kind; the executor stops on drift and on a wait timeout; translation check passes |
+| 2 | Fetcher, executor, model-fidelity tests on kind (C area). **Done** 2026-10-16 | Each operation's predicted state matches kind; the executor stops on drift and on a wait timeout; translation check passes |
 | 3 | Agent loop and evals (E area) | A model writes plans for the seeded tasks and repairs them from Refuted facts; Proved / Refuted / Unknown rates reported |
 | 4 | Measurement | Seeded bad plans through both planproof and the `safe-ops` gate; reviewer study, packet vs raw plan; results published |
 | 5 | Stretch: Lean 4 model of the semantics, a soundness proof for the checker, and differential tests between the Go kernel and the Lean model | Proof checks in CI; differential tests run on every PR |
@@ -39,7 +39,7 @@ flowchart LR
 1. **Done.** Fetcher, tested against fixtures applied to kind (`make kind-test`).
 2. **Done.** Executor, with runtime guards and an RBAC test (`cmd/planproof-exec`; `make kind-test`).
 3. **Done.** Model-fidelity tests: each operation and the example plans run on kind, observed states compared with predictions ([results/kind-test.txt](../../results/kind-test.txt)).
-4. Translation check against the API audit log.
+4. **Done.** Translation check against the API audit log (`executor.CheckTranslation`; audit logging on kind via `scripts/enable-audit.sh`).
 
 ### Phase 3
 1. Seeded task set (node-pool drain with tight budgets, image rollout under capacity limits, scale with a ceiling).

@@ -22,10 +22,11 @@ This folder is the product requirements document (PRD): what we're building, why
 | --- | --- |
 | Phase 0: PRD, spec, worked example | **Done** (2026-10-14) |
 | Phase 1: kernel, renderer, CLI | **Done** (2026-10-16): exit criteria met |
+| Phase 2: fetcher, executor, fidelity, translation check | **Done** (2026-10-16) |
 | K Kernel | **Phase 1 milestones 1-3 done**: budgets and CI; strict parsing and fuzzing; model, operations, rules and verdict, with golden examples. Open: K-25, K-26 |
 | R Review packet | **Phase 1 milestone 4 done**: renderer, word list, template lint, golden packets. Open: R-09, R-11 |
 | T CLI | **Done**: `check`, `render`, `hash`; strict YAML conversion. Open: an automated check for T-07 |
-| C Cluster | **In progress**: fetcher, executor and model fidelity done (phase 2 milestones 1-3; the model's predicted lowest matched the real cluster exactly in every case); open gaps in [known-gaps.md](../known-gaps.md) |
+| C Cluster | **Done for phase 2**: fetcher, executor, model fidelity (the predicted lowest matched the real cluster exactly in every case), translation check. Open: C-22 (2 of 8 triggers); gaps in [known-gaps.md](../known-gaps.md) |
 | E Agent and evals | Planned |
 
 ## Conventions

@@ -5,17 +5,17 @@
 === RUN   TestExecuteRefusesWithoutApproval
 --- PASS: TestExecuteRefusesWithoutApproval (8.05s)
 === RUN   TestExecuteStopsOnDrift
---- PASS: TestExecuteStopsOnDrift (8.14s)
+--- PASS: TestExecuteStopsOnDrift (8.15s)
 === RUN   TestExecuteStopsOnConflict
---- PASS: TestExecuteStopsOnConflict (8.09s)
+--- PASS: TestExecuteStopsOnConflict (8.07s)
 === RUN   TestExecuteStopsOnLiveAssertion
---- PASS: TestExecuteStopsOnLiveAssertion (8.18s)
+--- PASS: TestExecuteStopsOnLiveAssertion (8.09s)
 === RUN   TestExecuteWaitTimeout
---- PASS: TestExecuteWaitTimeout (18.10s)
+--- PASS: TestExecuteWaitTimeout (18.18s)
 === RUN   TestFetcherRBAC
 --- PASS: TestFetcherRBAC (0.80s)
 === RUN   TestFetchFixture
---- PASS: TestFetchFixture (8.07s)
+--- PASS: TestFetchFixture (9.06s)
 === RUN   TestFidelityOperations
 === RUN   TestFidelityOperations/rollout-restart,_surge_first
     fidelity_test.go:174: web   predicted lowest 4, real lowest 4
@@ -34,15 +34,15 @@
     fidelity_test.go:192: api   predicted lowest 3, real lowest 3
 --- PASS: TestFidelityOperations (23.06s)
     --- PASS: TestFidelityOperations/rollout-restart,_surge_first (4.06s)
-    --- PASS: TestFidelityOperations/rollout-restart,_one_unavailable (4.16s)
-    --- PASS: TestFidelityOperations/scale_down (1.05s)
-    --- PASS: TestFidelityOperations/scale_up (2.05s)
-    --- PASS: TestFidelityOperations/cordon,_drain_and_uncordon (2.30s)
+    --- PASS: TestFidelityOperations/rollout-restart,_one_unavailable (4.05s)
+    --- PASS: TestFidelityOperations/scale_down (1.11s)
+    --- PASS: TestFidelityOperations/scale_up (2.20s)
+    --- PASS: TestFidelityOperations/cordon,_drain_and_uncordon (2.20s)
 === RUN   TestFidelityExample
     fidelity_test.go:279: no-wait plan: the kernel says Refuted; the Eviction API refused 1 evictions
     fidelity_test.go:291: checkout predicted lowest 3, real lowest 3
     fidelity_test.go:291: cart  predicted lowest 1, real lowest 1
---- PASS: TestFidelityExample (10.43s)
+--- PASS: TestFidelityExample (11.50s)
 === RUN   TestFidelityCapacity
     fidelity_test.go:304: big   predicted lowest 4, real lowest 4
     fidelity_test.go:326: scale to 9: the kernel says no room; 1 pod(s) Pending on the real cluster
@@ -55,5 +55,9 @@
 --- PASS: TestUnknownTriggersAreReal (15.31s)
     --- PASS: TestUnknownTriggersAreReal/hpa:_another_actor_changes_replicas (7.14s)
     --- PASS: TestUnknownTriggersAreReal/placement-rules:_a_moved_pod_has_nowhere_to_go (8.17s)
+=== RUN   TestTranslationCheck
+    translation_test.go:72: translation check: 4 writes in the audit log, all compiled, none extra
+    translation_test.go:89: the extra write: [a write the plan didn't call for: patch nodes /planproof-worker4]
+--- PASS: TestTranslationCheck (13.46s)
 PASS
-ok  	github.com/billykong/planproof/test/kind	129.292s
+ok  	github.com/billykong/planproof/test/kind	144.798s
