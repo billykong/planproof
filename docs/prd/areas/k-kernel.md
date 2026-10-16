@@ -2,7 +2,7 @@
 
 **Goal:** a pure function, small enough to read in an afternoon, that checks a plan against a snapshot and a policy and returns Proved, Refuted or Unknown, with the facts behind it. Covers goals G1, G2 and G3.
 
-Status: **Planned**. Spec: [01](../../spec/01-plan.md) to [05](../../spec/05-verdict.md).
+Status: **In progress**: milestones 1-2 done (module, CI and budgets; strict parsing, hashing, fuzzing). Until milestone 3, a well-formed plan gets Unknown (`kernel-incomplete`), never Proved. Spec: [01](../../spec/01-plan.md) to [05](../../spec/05-verdict.md).
 
 ## User stories
 
@@ -16,19 +16,19 @@ Status: **Planned**. Spec: [01](../../spec/01-plan.md) to [05](../../spec/05-ver
 
 | ID | Requirement | Priority | Status |
 | --- | --- | --- | --- |
-| K-01 | The kernel is one Go package, `kernel/`, exposing `Check(snapshot, plan, policy []byte) Verdict`. | Must | Planned |
-| K-02 | It imports only the Go standard library, and does no I/O, no network calls, no reads of the clock or environment, no randomness and no goroutines. CI fails on any other import. | Must | Planned |
-| K-03 | Non-test Go code in `kernel/` is at most 1,500 lines (counted by a script in CI). | Must | Planned |
-| K-04 | Deterministic: the same inputs give byte-identical verdict JSON. Tested by running every golden case twice and with shuffled map iteration. | Must | Planned |
+| K-01 | The kernel is one Go package, `kernel/`, exposing `Check(snapshot, plan, policy []byte) Verdict`. | Must | **Done**: `kernel/check.go` |
+| K-02 | It imports only the Go standard library, and does no I/O, no network calls, no reads of the clock or environment, no randomness and no goroutines. CI fails on any other import. | Must | **Done**: `make budget` ([scripts/kernel-budget.sh](../../../scripts/kernel-budget.sh): import allowlist without `os`, `net`, `time` or random; no goroutines, channels, printing or scanning) |
+| K-03 | Non-test Go code in `kernel/` is at most 1,500 lines (counted by a script in CI). | Must | **Done**: `make budget` |
+| K-04 | Deterministic: the same inputs give byte-identical verdict JSON. Tested by running every golden case twice and with shuffled map iteration. | Must | **Partial**: `TestDeterministic` and `FuzzCheck` (two runs byte-identical); golden cases come with milestone 3 |
 
 ### Inputs
 
 | ID | Requirement | Priority | Status |
 | --- | --- | --- | --- |
-| K-10 | Strict parsing of plan, snapshot and policy: unknown fields, duplicate keys, wrong types and unknown enum values rejected (rule `input`). | Must | Planned |
-| K-11 | Size limits: plan 64 KiB, snapshot 4 MiB, policy 64 KiB; at most 50 steps. | Must | Planned |
-| K-12 | The plan's `snapshot` must equal the snapshot's SHA-256. | Must | Planned |
-| K-13 | Parsing is fuzzed; no input panics the kernel. | Should | Planned |
+| K-10 | Strict parsing of plan, snapshot and policy: unknown fields, duplicate keys, wrong types and unknown enum values rejected (rule `input`). | Must | **Done**: `TestInputRejected` (one case per reason code, plus keys that differ from the schema only in case, schema keys in the wrong place, required fields, op parameters, assertions, names, uniqueness) |
+| K-11 | Size limits: plan 64 KiB, snapshot 4 MiB, policy 64 KiB; at most 50 steps. | Must | **Done**: `TestInputRejected` (each input over its limit; 51 steps) |
+| K-12 | The plan's `snapshot` must equal the snapshot's SHA-256. | Must | **Done**: `TestInputRejected` ("plan for another snapshot"), `TestVerdictBindsHashes` |
+| K-13 | Parsing is fuzzed; no input panics the kernel. | Should | **Done**: `FuzzCheck`, run by `make fuzz` and in CI |
 
 ### Model and rules
 
@@ -46,6 +46,6 @@ Status: **Planned**. Spec: [01](../../spec/01-plan.md) to [05](../../spec/05-ver
 
 | ID | Requirement | Priority | Status |
 | --- | --- | --- | --- |
-| K-30 | The verdict carries the three input hashes, the kernel version and the facts in [spec 05](../../spec/05-verdict.md), in a fixed order. | Must | Planned |
-| K-31 | Fail closed: no error path returns Proved. Tested by injecting a failure at each stage. | Must | Planned |
+| K-30 | The verdict carries the three input hashes, the kernel version and the facts in [spec 05](../../spec/05-verdict.md), in a fixed order. | Must | **Partial**: hashes, version, check facts in rule order, input failures and Unknown (`TestVerdictBindsHashes`, `TestExamplesParse`); the other fact types come with milestone 3 |
+| K-31 | Fail closed: no error path returns Proved. Tested by injecting a failure at each stage. | Must | **Partial**: the input stage (`TestInputRejected`; `FuzzCheck` fails on any Proved) |
 | K-32 | The worked examples in `examples/` pass as golden verdict tests. | Must | Planned |

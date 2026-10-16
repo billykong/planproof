@@ -1,0 +1,24 @@
+# Unit tests, the kernel's budgets and a short fuzz run, on every pull
+# request and on main. Nothing here needs a cluster or a secret.
+name: ci
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  kernel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+    - uses: actions/checkout@v5
+    - uses: actions/setup-go@v6
+      with:
+        go-version-file: go.mod
+    - run: make fmt-check vet test budget
+    - run: make fuzz FUZZTIME=60s

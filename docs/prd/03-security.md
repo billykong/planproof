@@ -24,14 +24,14 @@ The attacker's best tool is the agent: a prompt injection in a ticket, log or to
 | ID | Requirement | Priority | Status |
 | --- | --- | --- | --- |
 | SEC-01 | The agent holds no credential that can write to the cluster. | Must | Planned |
-| SEC-02 | The kernel imports only the Go standard library, performs no I/O, and has no access to a clock, the network or randomness. A CI check fails on any other import. | Must | Planned |
-| SEC-03 | Every input the kernel reads is parsed strictly: unknown fields, duplicate keys, unknown enum values and inputs over the size limits are rejected. | Must | Planned |
-| SEC-04 | Fail closed: any error, missing input or hash mismatch gives Refuted or Unknown, never Proved. | Must | Planned |
+| SEC-02 | The kernel imports only the Go standard library, performs no I/O, and has no access to a clock, the network or randomness. A CI check fails on any other import. | Must | **Done**: `make budget` (K-02) |
+| SEC-03 | Every input the kernel reads is parsed strictly: unknown fields, duplicate keys, unknown enum values and inputs over the size limits are rejected. | Must | **Done**: `TestInputRejected` (K-10, K-11) |
+| SEC-04 | Fail closed: any error, missing input or hash mismatch gives Refuted or Unknown, never Proved. | Must | **Partial**: input errors and hash mismatch give Refuted (`TestInputRejected`); the rule stages come with milestone 3 |
 | SEC-05 | The verdict binds the SHA-256 of the plan, snapshot and policy and the kernel version; the executor checks all four. | Must | Planned |
 | SEC-06 | The executor's identity can do only what the operation set needs (scale, image patch, restart annotation, node `unschedulable`, the Eviction API) and is tested with `kubectl auth can-i`. | Must | Planned |
 | SEC-07 | The executor uses the Eviction API for drains, never pod deletion, so the cluster's own disruption budgets still apply if the model is wrong. | Must | Planned |
-| SEC-08 | Text from the plan (`rationale`, `ticket`, names) is never interpreted, and appears in the packet only quoted, in a section marked as unchecked. Object names are checked against Kubernetes name rules. | Must | Planned |
-| SEC-09 | The kernel and parser are fuzzed in CI. | Should | Planned |
+| SEC-08 | Text from the plan (`rationale`, `ticket`, names) is never interpreted, and appears in the packet only quoted, in a section marked as unchecked. Object names are checked against Kubernetes name rules. | Must | **Partial**: names and lengths checked, unknown keys never echoed (`TestInputRejected`); quoting in the packet comes with the renderer |
+| SEC-09 | The kernel and parser are fuzzed in CI. | Should | **Done**: `FuzzCheck` (`make fuzz`) |
 
 ## Residual risks
 

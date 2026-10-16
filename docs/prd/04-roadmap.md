@@ -26,11 +26,11 @@ flowchart LR
 ### Phase 0
 1. PRD (this folder).
 2. Spec: plan, snapshot and model, operations, rules and policy, verdict, review packet, glossary.
-3. Worked example: [examples/drain-two-nodes](../../examples/drain-two-nodes/): one Proved plan and one Refuted plan, with expected packets.
+3. Worked example: [examples/drain-two-nodes](../../examples/drain-two-nodes/): one Proved plan and two Refuted plans, with expected packets.
 
 ### Phase 1
-1. Go module, CI: build, vet, test, size budget, import check.
-2. Strict parsing and hashing for all three inputs; fuzz targets.
+1. **Done.** Go module, CI: build, vet, test, size budget, import check (`make ci`).
+2. **Done.** Strict parsing and hashing for all three inputs; fuzz target (`TestInputRejected`, `FuzzCheck`).
 3. The model and the seven operations; the rules; the verdict.
 4. Renderer, word list, template linter; golden packets for the examples.
 5. CLI.
