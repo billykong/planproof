@@ -1,0 +1,19 @@
+# As safeops-policy.yaml, but allowing scale to zero (PRD E-20),
+# from projects/02-approval-gate/manifests: namespace workloads is
+# agent-managed with at most 20 replicas each; ledger is protected;
+# payments is critical (tier critical). The single kind node isn't managed:
+# safe-ops has no node operations.
+apiVersion: planproof/v0
+kind: Policy
+managedNamespaces: [workloads]
+managedNodes: []
+protectedDeployments: [workloads/ledger]
+criticalDeployments: [workloads/payments]
+approvalRequiredFor: [critical, scale-down]
+limits:
+  maxReplicas: 20
+  maxUnschedulableNodes: 0
+  minSchedulableNodes: 1
+  maxWaitSeconds: 600
+  requireImageDigest: false
+  allowScaleToZero: true

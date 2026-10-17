@@ -12,10 +12,10 @@ CLUSTER    := planproof
 KCFG       := $(CURDIR)/.kube/$(CLUSTER)
 KUBECTL    := kubectl --kubeconfig $(KCFG) --context kind-$(CLUSTER)
 
-.PHONY: ci fmt-check vet test budget fuzz cover build examples kind-up kind-down kind-test
+.PHONY: ci fmt-check vet test budget fuzz cover build examples kind-up kind-down kind-test safeops-compare results results-check
 
 ## ci: everything CI runs on a pull request
-ci: fmt-check vet test budget cover examples fuzz
+ci: fmt-check vet test budget cover examples results-check fuzz
 
 fmt-check:
 	@test -z "$$(gofmt -l .)" || { gofmt -l .; echo "run gofmt -w ."; exit 1; }
@@ -75,3 +75,31 @@ kind-down:
 kind-test:
 	@mkdir -p results
 	set -o pipefail; PLANPROOF_KUBECONFIG=$(KCFG) go test ./test/kind -count=1 -v -timeout 20m 2>&1 | tee results/kind-test.txt
+
+## safeops-compare: planproof and the safe-ops-agent-k8s gate on the same
+## plans, both directions (PRD E-20). Needs a checkout of safe-ops-agent-k8s
+## next to this repository (SAFEOPS); exports its committed tree at
+## SAFEOPS_REF into bin/safeops (the checkout itself is never changed) and
+## writes results/safeops-comparison.md.
+SAFEOPS     ?= $(CURDIR)/../safe-ops-agent-k8s
+SAFEOPS_REF ?= HEAD
+safeops-compare:
+	@rm -rf bin/safeops && mkdir -p bin/safeops/repo
+	@git -C $(SAFEOPS) archive $(SAFEOPS_REF) | tar -x -C bin/safeops/repo
+	@mkdir -p bin/safeops/repo/projects/02-approval-gate/planproofshim
+	@cp measure/safeops/shim/shim.go bin/safeops/repo/projects/02-approval-gate/planproofshim/
+	@ln -sfn repo/projects/02-approval-gate bin/safeops/approval-gate
+	cd measure/safeops && go run . -commit $$(git -C $(SAFEOPS) rev-parse --short $(SAFEOPS_REF)) -out ../../results/safeops-comparison.md
+
+## results: regenerate every table in results/ that needs no network,
+## cluster or sibling checkout (PRD E-23). results-check (in CI) fails if a
+## committed table differs from what the commands write.
+RUNS := $(addprefix results/agent-,claude-opus-5-5-high.jsonl claude-opus-5-5-high-prompt-v2.jsonl \
+  claude-sonnet-5-5-high.jsonl claude-sonnet-5-5-high-prompt-v2.jsonl claude-haiku-5-5-high-prompt-v2.jsonl \
+  claude-haiku-5-5-high-kernel-0.2.0.jsonl qwen2.5-1.5b-instruct.jsonl)
+results:
+	go run ./cmd/planproof-eval summary $(RUNS) > results/agent-summary.md
+	go run ./cmd/planproof-eval seeded > results/seeded.md
+	python3 scripts/build-trials-page.py
+results-check: results
+	@git diff --exit-code -- results/ || { echo "results/ differs from what the commands write: run make results and commit"; exit 1; }

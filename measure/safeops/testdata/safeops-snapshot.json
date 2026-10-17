@@ -1,0 +1,171 @@
+{
+  "apiVersion": "planproof/v0",
+  "kind": "Snapshot",
+  "cluster": "kind-safe-ops",
+  "fetchedAt": "2026-10-17T00:00:00Z",
+  "nodes": [
+    {
+      "name": "safe-ops-control-plane",
+      "ready": true,
+      "unschedulable": false,
+      "taints": false,
+      "allocatable": {
+        "cpuMilli": 4000,
+        "memoryMiB": 8192,
+        "pods": 110
+      },
+      "resourceVersion": "100"
+    }
+  ],
+  "deployments": [
+    {
+      "namespace": "workloads",
+      "name": "web",
+      "replicas": 1,
+      "readyReplicas": 1,
+      "updatedReplicas": 1,
+      "strategy": {
+        "type": "RollingUpdate",
+        "maxUnavailable": 0,
+        "maxSurge": 1
+      },
+      "containers": [
+        {
+          "name": "web",
+          "image": "registry.k8s.io/pause:3.10"
+        }
+      ],
+      "podRequests": {
+        "cpuMilli": 10,
+        "memoryMiB": 16,
+        "pods": 1
+      },
+      "placementRules": false,
+      "hpa": false,
+      "resourceVersion": "300"
+    },
+    {
+      "namespace": "workloads",
+      "name": "payments",
+      "replicas": 2,
+      "readyReplicas": 2,
+      "updatedReplicas": 2,
+      "strategy": {
+        "type": "RollingUpdate",
+        "maxUnavailable": 0,
+        "maxSurge": 1
+      },
+      "containers": [
+        {
+          "name": "payments",
+          "image": "registry.k8s.io/pause:3.10"
+        }
+      ],
+      "podRequests": {
+        "cpuMilli": 10,
+        "memoryMiB": 16,
+        "pods": 1
+      },
+      "placementRules": false,
+      "hpa": false,
+      "resourceVersion": "300"
+    },
+    {
+      "namespace": "workloads",
+      "name": "ledger",
+      "replicas": 1,
+      "readyReplicas": 1,
+      "updatedReplicas": 1,
+      "strategy": {
+        "type": "RollingUpdate",
+        "maxUnavailable": 0,
+        "maxSurge": 1
+      },
+      "containers": [
+        {
+          "name": "ledger",
+          "image": "registry.k8s.io/pause:3.10"
+        }
+      ],
+      "podRequests": {
+        "cpuMilli": 10,
+        "memoryMiB": 16,
+        "pods": 1
+      },
+      "placementRules": false,
+      "hpa": false,
+      "resourceVersion": "300"
+    }
+  ],
+  "pods": [
+    {
+      "namespace": "workloads",
+      "name": "web-0",
+      "node": "safe-ops-control-plane",
+      "ready": true,
+      "owner": {
+        "kind": "Deployment",
+        "name": "web"
+      },
+      "requests": {
+        "cpuMilli": 10,
+        "memoryMiB": 16,
+        "pods": 1
+      },
+      "localStorage": false,
+      "placementRules": false
+    },
+    {
+      "namespace": "workloads",
+      "name": "payments-0",
+      "node": "safe-ops-control-plane",
+      "ready": true,
+      "owner": {
+        "kind": "Deployment",
+        "name": "payments"
+      },
+      "requests": {
+        "cpuMilli": 10,
+        "memoryMiB": 16,
+        "pods": 1
+      },
+      "localStorage": false,
+      "placementRules": false
+    },
+    {
+      "namespace": "workloads",
+      "name": "payments-1",
+      "node": "safe-ops-control-plane",
+      "ready": true,
+      "owner": {
+        "kind": "Deployment",
+        "name": "payments"
+      },
+      "requests": {
+        "cpuMilli": 10,
+        "memoryMiB": 16,
+        "pods": 1
+      },
+      "localStorage": false,
+      "placementRules": false
+    },
+    {
+      "namespace": "workloads",
+      "name": "ledger-0",
+      "node": "safe-ops-control-plane",
+      "ready": true,
+      "owner": {
+        "kind": "Deployment",
+        "name": "ledger"
+      },
+      "requests": {
+        "cpuMilli": 10,
+        "memoryMiB": 16,
+        "pods": 1
+      },
+      "localStorage": false,
+      "placementRules": false
+    }
+  ],
+  "pdbs": []
+}

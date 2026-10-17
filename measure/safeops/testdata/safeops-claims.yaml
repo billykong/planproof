@@ -1,0 +1,7 @@
+# The goal each intent states, for safe-ops' seeded proposals whose intent
+# and action disagree (PRD E-20). Our reading of the intent's words; the
+# plan keeps the action's steps, so planproof's frame rule compares them.
+storefront-latency:        # "add capacity to web"; the action scales payments
+  - {deployment: workloads/web, field: replicas, from: 1, to: 2}
+tls-certificate-rotation:  # "restart web"; the action scales web to 2
+  - {deployment: workloads/web, field: restarted, from: false, to: true}

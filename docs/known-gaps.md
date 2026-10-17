@@ -41,3 +41,23 @@ Weaknesses we know about and have not closed, by stable ID. A gap is closed by a
 **Why it matters only one way:** the tests check that the real lowest is at least the predicted lowest. A missed dip can hide a failure, never invent one.
 
 **Options:** count from a watch on pods instead of polling, so every readiness change is seen.
+
+## GAP-06: the policy can't forbid scale to zero for one deployment only
+
+**What:** `limits.allowScaleToZero` is one switch for every managed deployment. safe-ops' gate can say "web may go to zero with a person's approval; the critical payments never". planproof can say "none may" or "any may", nothing in between.
+
+**Why it matters:** found by the safe-ops comparison (E-20, [results/safeops-comparison.md](../results/safeops-comparison.md) section 3): with the switch on, planproof proves `payments-maintenance` (payments to zero) with approval required, where safe-ops denies it outright. With the switch off it refutes both, stricter than safe-ops for web.
+
+**Mitigations now:** run with `allowScaleToZero: false` (the default in every policy here); a deployment with a disruption budget is also held above zero by rule `never-zero` during drains.
+
+**Options to close it:** a per-deployment exception list (`scaleToZeroAllowed: [ns/name]`), or "critical deployments never go to zero". Either is a policy-schema change (spec 04) with an accept and a reject test.
+
+## GAP-07: the safe-ops comparison doesn't run in CI
+
+**What:** `make safeops-compare` needs a checkout of `safe-ops-agent-k8s` next to this repository and builds against its module; CI has neither.
+
+**Why it matters:** a change to the kernel, the seeded plans or safe-ops can change the comparison without anyone noticing.
+
+**Mitigations now:** the harness checks itself against safe-ops' own expected labels on every run and fails if they disagree; `results/safeops-comparison.md` records the safe-ops commit and the gate policy's hash.
+
+**Options to close it:** a CI job that checks out both repositories at pinned commits and fails if the regenerated table differs.
