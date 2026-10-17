@@ -1,7 +1,7 @@
 // Command planproof-eval runs the planning agent on the task set and
 // compares models (PRD area E). Results are generated, never typed (E-23).
 //
-//	planproof-eval run --model local|claude|scripted [--tries 4] [--tasks a,b] [--repeat 1] [--out results/]
+//	planproof-eval run --model local|claude|scripted [--tries 4] [--tasks a,b] [--repeat 1] [--append] [--out results/]
 //	planproof-eval summary results/agent-*.jsonl > results/agent-summary.md
 //
 // run writes one JSON line per run (transcript and grade) to
@@ -68,6 +68,7 @@ func run(args []string) {
 	only := fs.String("tasks", "", "comma-separated task ids (default: all)")
 	repeat := fs.Int("repeat", 1, "runs per task")
 	out := fs.String("out", "results", "directory for the JSON lines")
+	appendRuns := fs.Bool("append", false, "add to the model's results file instead of replacing it")
 	claudeModel := fs.String("claude-model", "claude-opus-5-5", "Claude model")
 	effort := fs.String("effort", "high", "Claude effort")
 	localURL := fs.String("local-url", "http://172.30.99.10:8000/v1", "the local model server")
@@ -102,7 +103,11 @@ func run(args []string) {
 	}
 	os.MkdirAll(filepath.Join(root, *out), 0o755)
 	path := filepath.Join(root, *out, "agent-"+name+".jsonl")
-	f, err := os.Create(path)
+	flags := os.O_CREATE | os.O_WRONLY | os.O_TRUNC
+	if *appendRuns {
+		flags = os.O_CREATE | os.O_WRONLY | os.O_APPEND
+	}
+	f, err := os.OpenFile(path, flags, 0o644)
 	if err != nil {
 		fail(err)
 	}
@@ -138,6 +143,9 @@ func run(args []string) {
 		}
 	}
 	fmt.Fprintf(os.Stderr, "wrote %s\n", path)
+	if *appendRuns {
+		recs = read(path) // summarise every run in the file
+	}
 	summary(os.Stdout, markInfeasible(recs))
 }
 
@@ -196,7 +204,8 @@ func read(path string) []Record {
 
 // price is $ per million tokens: input, output, cache read, cache write.
 var price = map[string][4]float64{
-	"claude-opus-5-5": {4, 20, 0.20, 5},
+	"claude-opus-5-5":   {4, 20, 0.20, 5},
+	"claude-sonnet-5-5": {2, 10, 0.20, 2.50},
 }
 
 // summary is the E-12 table, one row per model.
