@@ -44,7 +44,7 @@ flowchart LR
 ### Phase 3
 1. **Done.** Seeded task set ([evals/tasks.yaml](../../evals/tasks.yaml), 13 tasks, each proved solvable or not).
 
-2. **Partial.** Agent loop (`agent/`, `cmd/planproof-eval`): scripted and local model done; Claude Opus 5.5 written, waiting for credentials.
+2. **Done.** Agent loop (`agent/`, `cmd/planproof-eval`) with the scripted model, the local model and Claude Opus 5.5 ([results/agent-summary.md](../../results/agent-summary.md)).
 3. **Done.** Seeded bad plans, including intent-versus-effect mismatches ([evals/seeded.yaml](../../evals/seeded.yaml), [results/seeded.md](../../results/seeded.md)).
 
 ### Phase 4
