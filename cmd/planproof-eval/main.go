@@ -71,6 +71,7 @@ func run(args []string) {
 	appendRuns := fs.Bool("append", false, "add to the model's results file instead of replacing it")
 	claudeModel := fs.String("claude-model", "claude-opus-5-5", "Claude model")
 	effort := fs.String("effort", "high", "Claude effort")
+	tag := fs.String("tag", "", "label added to the model's name and results file (e.g. prompt-v2)")
 	localURL := fs.String("local-url", "http://172.30.99.10:8000/v1", "the local model server")
 	localKeyFile := fs.String("local-key-file", filepath.Join(os.Getenv("HOME"), ".config/safe-ops/local-model-key"), "its bearer key")
 	localModel := fs.String("local-model", "qwen2.5-1.5b-instruct", "its served model name")
@@ -79,7 +80,9 @@ func run(args []string) {
 	var m agent.Model
 	switch *model {
 	case "claude":
-		m = agent.NewClaude(*claudeModel, anthropic.BetaOutputConfigEffort(*effort))
+		c := agent.NewClaude(*claudeModel, anthropic.BetaOutputConfigEffort(*effort))
+		c.Label = *tag
+		m = c
 	case "local":
 		key, err := os.ReadFile(*localKeyFile)
 		if err != nil {
@@ -206,6 +209,7 @@ func read(path string) []Record {
 var price = map[string][4]float64{
 	"claude-opus-5-5":   {4, 20, 0.20, 5},
 	"claude-sonnet-5-5": {2, 10, 0.20, 2.50},
+	"claude-haiku-5-5":  {0.10, 0.50, 0.01, 0.125}, // up to 100K-token prompts; cache prices assumed at the usual 0.1x / 1.25x
 }
 
 // summary is the E-12 table, one row per model.

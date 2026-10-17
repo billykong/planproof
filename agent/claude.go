@@ -16,14 +16,24 @@ type Claude struct {
 	Client anthropic.Client
 	Model  string // e.g. "claude-opus-5-5"
 	Effort anthropic.BetaOutputConfigEffort
+	Label  string // optional, added to Name (e.g. a prompt version)
 }
+
+// fallbackModels support server-side refusal fallbacks (Claude Haiku 5.5
+// doesn't: a refusal there simply stops).
+var fallbackModels = map[string]bool{"claude-fable-5-1": true, "claude-opus-5-5": true, "claude-opus-5": true, "claude-sonnet-5-5": true}
 
 // NewClaude makes a planner on model; opts go to the client.
 func NewClaude(model string, effort anthropic.BetaOutputConfigEffort, opts ...option.RequestOption) *Claude {
 	return &Claude{Client: anthropic.NewClient(opts...), Model: model, Effort: effort}
 }
 
-func (c *Claude) Name() string { return c.Model + "/" + string(c.Effort) }
+func (c *Claude) Name() string {
+	if c.Label != "" {
+		return c.Model + "/" + string(c.Effort) + "/" + c.Label
+	}
+	return c.Model + "/" + string(c.Effort)
+}
 
 func (c *Claude) Start(system, user string) Session {
 	return &claudeSession{c: c, system: system, messages: []anthropic.BetaMessageParam{
@@ -61,7 +71,7 @@ func (s *claudeSession) Next(ctx context.Context) (Turn, error) {
 		InputSchema: anthropic.BetaToolInputSchemaParam{Properties: toolSchemaMap()["properties"], Required: []string{"goal", "steps"}},
 	}
 	adaptive := anthropic.BetaThinkingConfigAdaptiveParam{}
-	resp, err := s.c.Client.Beta.Messages.New(ctx, anthropic.BetaMessageNewParams{
+	params := anthropic.BetaMessageNewParams{
 		Model:     anthropic.Model(s.c.Model),
 		MaxTokens: 16000,
 		System: []anthropic.BetaTextBlockParam{{
@@ -71,10 +81,13 @@ func (s *claudeSession) Next(ctx context.Context) (Turn, error) {
 		Tools:        []anthropic.BetaToolUnionParam{{OfTool: &tool}},
 		Thinking:     anthropic.BetaThinkingConfigParamUnion{OfAdaptive: &adaptive},
 		OutputConfig: anthropic.BetaOutputConfigParam{Effort: s.c.Effort},
+	}
+	if fallbackModels[s.c.Model] {
 		// A refusal is re-served by a fallback model in the same call.
-		Fallbacks: anthropic.BetaFallbacksParamUnion{OfDefault: constant.ValueOf[constant.Default]()},
-		Betas:     []anthropic.AnthropicBeta{anthropic.AnthropicBetaServerSideFallback2026_07_01},
-	})
+		params.Fallbacks = anthropic.BetaFallbacksParamUnion{OfDefault: constant.ValueOf[constant.Default]()}
+		params.Betas = []anthropic.AnthropicBeta{anthropic.AnthropicBetaServerSideFallback2026_07_01}
+	}
+	resp, err := s.c.Client.Beta.Messages.New(ctx, params)
 	if err != nil {
 		var apiErr *anthropic.Error
 		if errors.As(err, &apiErr) {

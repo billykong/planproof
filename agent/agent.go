@@ -79,6 +79,7 @@ type Attempt struct {
 type Transcript struct {
 	Task     string    `json:"task"`
 	Model    string    `json:"model"`
+	Prompt   string    `json:"prompt"` // PromptVersion
 	Attempts []Attempt `json:"attempts"`
 	Final    string    `json:"final,omitempty"` // the model's last text
 	NoPlan   bool      `json:"declaredNoSafePlan"`
@@ -98,7 +99,7 @@ const NoSafePlan = "NO SAFE PLAN"
 // Run drives one task: the model submits plans until one is Proved, it
 // stops, or it has used maxTries submissions (E-01, E-02).
 func Run(ctx context.Context, m Model, t Task, maxTries int) Transcript {
-	tr := Transcript{Task: t.ID, Model: m.Name(), Attempts: []Attempt{}}
+	tr := Transcript{Task: t.ID, Model: m.Name(), Prompt: PromptVersion, Attempts: []Attempt{}}
 	s := m.Start(SystemPrompt, UserPrompt(t))
 	for {
 		turn, err := s.Next(ctx)
