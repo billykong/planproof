@@ -70,7 +70,7 @@ const V = {
   },
 
   hook(v) {
-    let s = label('PLANPROOF'), y = 480;
+    let s = label('AI-WRITTEN CHANGE PLANS'), y = 480;
     for (const l of v.lines) { const r = lines(X, y, l, W - 2 * X, 84, C.fg, 700, 1.2, 0.62); s += r.svg; y += r.h; }
     s += lines(X, y + 50, v.kicker, W - 2 * X, 84, C.amber, 700, 1.2, 0.62).svg;
     return frame(s + stack(W / 2, 960, 1.1, v.verdict || 'REFUTED'));
@@ -235,13 +235,13 @@ const V = {
     const card = (y, k, v) => `<rect x="${X}" y="${y}" width="${cw}" height="130" rx="18" fill="${C.box}" stroke="${C.teal}" stroke-width="3"/>`
       + t(X + 40, y + 52, k, 26, C.teal, mono, 700, 'letter-spacing="3"') + t(X + 40, y + 100, v, SHORT ? 34 : 38, C.fg, mono, 700);
     if (SHORT) {
-      return frame(label('PLANPROOF')
-        + lines(X, 420, 'Checking AI-written change plans', W - 2 * X, 64, C.fg, 700).svg
-        + card(640, 'CODE · MIT', 'github.com/billykong/planproof')
-        + card(810, 'WRITE-UP', 'billykong.github.io/planproof')
-        + card(980, 'A DEMO, NOT A PRODUCT', 'full video linked below')
-        + t(X, 1220, 'Scripted with AI; AI voice.', 34, C.muted)
-        + t(X, 1270, 'All checker output is from real runs.', 34, C.muted));
+      return frame(label('THE IDEA')
+        + lines(X, 420, 'Trust a checker small enough to read', W - 2 * X, 64, C.fg, 700).svg
+        + card(660, 'THE WRITE-UP', 'billykong.github.io/planproof')
+        + card(830, 'THE FULL VIDEO', 'linked below')
+        + card(1000, 'A SMALL DEMO · NOT A PRODUCT', 'github.com/billykong/planproof')
+        + t(X, 1240, 'Scripted with AI; AI voice.', 34, C.muted)
+        + t(X, 1290, 'All checker output is from real runs.', 34, C.muted));
     }
     return frame(label('THANKS FOR WATCHING')
       + t(X, 260, 'The code, the tests, every result', 72, C.fg, sans, 700)

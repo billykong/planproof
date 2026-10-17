@@ -42,13 +42,16 @@ Upload each as a normal video; a vertical video under three minutes becomes a Sh
 
 | File | Title |
 | --- | --- |
-| `out/short-looks-fine/short-looks-fine.mp4` (0:53) | This AI plan looks fine. It isn't. #shorts |
-| `out/short-wrong-goal/short-wrong-goal.mp4` (0:56) | My checker proved the wrong plan #shorts |
-| `out/short-reviewers/short-reviewers.mp4` (0:49) | AI reviewers caught 12 of 18 bad plans. Then 18. #shorts |
+| `out/short-looks-fine/short-looks-fine.mp4` (0:58) | This AI plan looks fine. It isn't. #shorts |
+| `out/short-wrong-goal/short-wrong-goal.mp4` (0:54) | A checker proved the wrong plan safe #shorts |
+| `out/short-reviewers/short-reviewers.mp4` (0:55) | AI reviewers caught 12 of 18 bad plans. Then 18. #shorts |
+
+Each Short argues the idea, not the tool: don't trust the AI's plan, trust a checker small enough to read. planproof is named only as the demo the examples come from.
 
 **Description (same for all three):**
 
-    planproof: a demo of a small checker, with no AI in it, for AI-written change plans. Not a production system. Full video: [video link]
+    Don't trust the AI's plan. Trust a checker small enough to read: no AI in it, and short enough for a person to review.
+    Full video: [video link]
     Write-up: https://billykong.github.io/planproof/
-    Code (MIT): https://github.com/billykong/planproof
+    The examples come from planproof, a small demo I built to try the idea, not a product: https://github.com/billykong/planproof
     Script drafted with AI and checked by me; AI voice; all checker output is from real runs.

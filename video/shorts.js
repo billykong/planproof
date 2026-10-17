@@ -1,6 +1,20 @@
-// Three Shorts (1080x1920, under a minute each), each one idea from the
+// Three Shorts (1080x1920, under a minute each), each one argument from the
 // video, with the same captures and the same claims. Same format as
 // scenes.js; render.js lays these out vertically.
+//
+// The point of each is the idea, not the tool: don't trust the AI's plan,
+// trust a checker small enough to read. planproof appears only as the small
+// demo the examples come from.
+
+const close = say => [
+  { id: 'idea', visual: { type: 'statement', label: 'THE IDEA', lines: [
+    'Don’t trust the AI’s plan.',
+    'Trust a checker small enough to read.',
+  ] }, beats: [{ show: 2, say }] },
+  { id: 'end', visual: { type: 'end' }, beats: [
+    { say: 'The examples come from a small demo I built to try the idea, not a product. The write-up and the full video are linked.' },
+  ] },
+];
 
 module.exports = { shorts: {
   'looks-fine': { title: 'This AI plan looks fine. It isn’t.', scenes: [
@@ -16,40 +30,29 @@ module.exports = { shorts: {
       'The middle of the plan isn’t.',
       'Three AI reviewers approved it every time.',
     ] }, beats: [
-      { show: 2, say: 'Every single step is fine. The problem only shows up in the middle of the plan, which is exactly where people and AI models both tend not to look.' },
+      { show: 2, say: 'Every step is fine on its own. The problem is in the middle, where people and AI models both tend not to look.' },
       { show: 3, say: 'Three AI models, reviewing the raw plan, approved it every time. Given the checker’s report, they rejected it.' },
     ] },
-    { id: 'end', visual: { type: 'end' }, beats: [
-      { say: 'The checker is called planproof: a demo of how such a check can work, not a production system. The full video and the write-up are linked.' },
-    ] },
+    ...close('So don’t rely on a smarter reviewer. Use a checker small enough to read, that plays out every step, including the middle.'),
   ] },
 
-  'wrong-goal': { title: 'My checker proved the wrong plan', scenes: [
-    { id: 'hook', visual: { type: 'hook', lines: ['My checker', 'proved a plan.'], kicker: 'The wrong plan.', verdict: 'PROVED' }, beats: [
-      { say: 'My checker proved that an AI’s plan was safe. It was the wrong plan.' },
+  'wrong-goal': { title: 'A checker proved the wrong plan safe', scenes: [
+    { id: 'hook', visual: { type: 'hook', lines: ['A checker proved', 'the plan safe.'], kicker: 'The wrong plan.', verdict: 'PROVED' }, beats: [
+      { say: 'A checker proved that an AI’s plan was safe. It was the wrong plan.' },
     ] },
-    { id: 'story', visual: { type: 'statement', label: 'IN THE TRIALS', lines: [
+    { id: 'story', visual: { type: 'statement', label: 'IT HAPPENED', lines: [
       'Asked: an image with a 64-character fingerprint.',
       'Claude Haiku wrote 65 characters. Twice.',
       'A safe rollout, of an image nobody asked for.',
     ] }, beats: [
-      { show: 1, say: 'In the trials, Claude Haiku was asked to roll out an image identified by a sixty-four character fingerprint.' },
+      { show: 1, say: 'In a test, Claude Haiku was asked to roll out an image identified by a sixty-four character fingerprint.' },
       { show: 2, say: 'Twice, it copied it with sixty-five characters.' },
       { show: 3, say: 'The plan was internally consistent, so the checker proved it: a safe rollout of an image nobody asked for.' },
     ] },
-    { id: 'notchecked', visual: { type: 'terminal', label: 'EVERY REPORT SAYS', capture: 'proved' }, beats: [
-      { show: 'notchecked', say: 'That’s why every report says this. The checker checks a plan against its own goal. Only a person can say whether the goal is what the ticket asked for.' },
+    { id: 'notchecked', visual: { type: 'terminal', label: 'SO THE REPORT SAYS', capture: 'proved' }, beats: [
+      { show: 'notchecked', say: 'A checker can only check a plan against its own goal. Only a person can say whether the goal is what the ticket asked for, so the report says so, every time.' },
     ] },
-    { id: 'fix', visual: { type: 'statement', label: 'WHAT CHANGED', lines: [
-      'Now a malformed fingerprint is refused outright.',
-      'The person’s job: one clear question.',
-    ] }, beats: [
-      { show: 1, say: 'I tightened the checker, so a malformed fingerprint is now refused outright.' },
-      { show: 2, say: 'But the lesson stands: make the person’s job one clear question. Is this goal what we asked for?' },
-    ] },
-    { id: 'end', visual: { type: 'end' }, beats: [
-      { say: 'The checker is called planproof: a demo of how such a check can work, not a production system. The full video and the write-up are linked.' },
-    ] },
+    ...close('So split the work. A checker small enough to read handles the steps. The person answers one clear question: is this the goal we asked for?'),
   ] },
 
   'reviewers': { title: 'AI reviewers caught 12 of 18 bad plans. Then 18.', scenes: [
@@ -68,13 +71,8 @@ module.exports = { shorts: {
       'A fingerprint one character too long.',
     ] }, beats: [
       { show: 2, say: 'Reading raw plans, all three approved the same two bad plans every time: a drain without waiting in between, and an image fingerprint one character too long.' },
-      { show: 2, say: 'Both are things a checker works out mechanically, and a reader has to work out in their head.' },
+      { show: 2, say: 'Both are things a checker works out mechanically, and a reader has to work out in their head. These are AI reviewers, not people; a study with people is the real test.' },
     ] },
-    { id: 'caveat', visual: { type: 'statement', label: 'THE CAVEAT', lines: ['AI reviewers, not people.'] }, beats: [
-      { show: 1, say: 'These are AI reviewers, not people. A study with people is the real test.' },
-    ] },
-    { id: 'end', visual: { type: 'end' }, beats: [
-      { say: 'The checker is called planproof: a demo of how such a check can work, not a production system. The full video and the write-up are linked.' },
-    ] },
+    ...close('So let a checker small enough to read do the mechanical part, and leave the reviewer only what needs judgement.'),
   ] },
 } };
