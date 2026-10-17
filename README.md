@@ -53,6 +53,8 @@ The number of `shop/cart` pods changes from 2 to 3.
 
 ## Documents
 
+Results: [results/agent-trials.md](results/agent-trials.md) (the agent trials: four models, 247 runs, every kernel reply in [results/trials.html](results/trials.html)), [results/kind-test.txt](results/kind-test.txt) (model fidelity on a real cluster), [results/seeded.md](results/seeded.md) (seeded bad plans).
+
 | Path | Contents |
 | --- | --- |
 | [docs/prd/](docs/prd/README.md) | Product requirements: problem, goals, architecture, threat model, roadmap, requirements by area. Start here |

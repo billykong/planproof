@@ -1,0 +1,201 @@
+<title>Planproof Model Trials</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+/* Layout: one reading column for the explanation, wider tables and run cards below; verdicts carry semantic color, the accent marks structure. */
+:root {
+  --bg: #f5f7fa; --surface: #ffffff; --ink: #17202c; --muted: #586274; --line: #dbe1ea;
+  --accent: #2b4fb4; --code-bg: #edf1f7;
+  --ok: #1d7549; --ok-bg: #e2f2e9; --bad: #b0281f; --bad-bg: #fae5e3; --warn: #865700; --warn-bg: #faefd6;
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #10141b; --surface: #171d26; --ink: #e5e9f0; --muted: #9ba5b5; --line: #29313e;
+  --accent: #8ea8ff; --code-bg: #1e2632;
+  --ok: #72d4a1; --ok-bg: #15301f; --bad: #ff8c82; --bad-bg: #3b1d1a; --warn: #f1c66f; --warn-bg: #352a12; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #10141b; --surface: #171d26; --ink: #e5e9f0; --muted: #9ba5b5; --line: #29313e;
+  --accent: #8ea8ff; --code-bg: #1e2632;
+  --ok: #72d4a1; --ok-bg: #15301f; --bad: #ff8c82; --bad-bg: #3b1d1a; --warn: #f1c66f; --warn-bg: #352a12; color-scheme: dark }
+
+body { background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 16px; line-height: 1.55; }
+.wrap { max-width: 1060px; margin: 0 auto; padding-block: 40px 72px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 56px; }
+section { display: grid; gap: 18px; min-width: 0; }
+.prose { max-width: 66ch; display: grid; gap: 14px; }
+h1, h2, h3 { margin: 0; text-wrap: balance; line-height: 1.2; }
+h1 { font-size: clamp(30px, 5vw, 42px); font-weight: 600; letter-spacing: -0.01em; }
+h2 { font-size: 24px; font-weight: 600; }
+h3 { font-size: 17px; font-weight: 600; }
+p { margin: 0; }
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.lede { font-size: 18px; color: var(--muted); max-width: 62ch; }
+code, pre { font-family: var(--mono); font-size: 0.86em; }
+code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+.muted { color: var(--muted); }
+
+/* The two parts */
+.roles { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.role { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; display: grid; gap: 8px; min-width: 0; }
+.role .who { font-family: var(--mono); font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+
+/* One ticket, step by step: a real sequence, so numbered */
+.flow { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; counter-reset: step; max-width: 74ch; }
+.flow li { counter-increment: step; display: grid; grid-template-columns: 40px 1fr; gap: 14px; padding-bottom: 18px; position: relative; }
+.flow li::before { content: counter(step); width: 30px; height: 30px; border-radius: 50%; border: 1.5px solid var(--accent); color: var(--accent);
+  display: grid; place-items: center; font-family: var(--mono); font-size: 14px; background: var(--bg); position: relative; z-index: 1; }
+.flow li::after { content: ""; position: absolute; left: 15px; top: 30px; bottom: 0; width: 1.5px; background: var(--line); }
+.flow li:last-child::after { display: none; }
+.flow b { font-weight: 600; }
+.branch { display: inline-flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+
+.pill, .verdict { display: inline-block; font-family: var(--mono); font-size: 12px; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.ok { color: var(--ok); } .bad { color: var(--bad); } .warn { color: var(--warn); }
+.pill.ok, .verdict.ok { background: var(--ok-bg); } .pill.bad, .verdict.bad { background: var(--bad-bg); } .pill.warn, .verdict.warn { background: var(--warn-bg); }
+
+.callout { border-left: 3px solid var(--warn); background: var(--warn-bg); padding: 14px 18px; border-radius: 0 8px 8px 0; max-width: 74ch; display: grid; gap: 6px; }
+
+/* Tables */
+.scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; font-size: 14.5px; }
+th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; }
+thead th { font-size: 12px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
+tbody tr:last-child th, tbody tr:last-child td { border-bottom: 0; }
+tbody th { font-weight: 500; white-space: nowrap; }
+.sub { display: block; font-size: 12px; color: var(--muted); font-weight: 400; text-transform: none; letter-spacing: 0; }
+td.bad, td.warn { font-weight: 600; }
+.grid td.cell { text-align: center; font-family: var(--mono); font-size: 13px; }
+.grid td.cell.ok { background: var(--ok-bg); } .grid td.cell.bad { background: var(--bad-bg); } .grid td.cell.warn { background: var(--warn-bg); }
+.grid thead th { text-align: center; }
+.note { font-size: 14px; color: var(--muted); max-width: 74ch; }
+
+/* Kernel replies */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.chip, .tool { font: 500 13px var(--sans); border: 1px solid var(--line); background: var(--surface); color: var(--ink); padding: 6px 12px; border-radius: 999px; cursor: pointer; }
+.chip[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); background: var(--code-bg); }
+.chip:focus-visible, .tool:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.runs { display: grid; gap: 10px; }
+.run { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; min-width: 0; }
+.run > summary { cursor: pointer; list-style: none; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; padding: 12px 16px; align-items: center; }
+.run > summary::-webkit-details-marker { display: none; }
+.run > summary::before { content: "▸"; color: var(--muted); margin-right: 4px; }
+.run[open] > summary::before { content: "▾"; }
+.run-title { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; flex: 1 1 280px; min-width: 0; }
+.model { font-weight: 600; } .tag { color: var(--muted); font-size: 13px; }
+.run-meta { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.count { font-size: 13px; color: var(--muted); }
+.run[open] > *:not(summary) { margin: 0 16px; }
+.run[open] > *:last-child { margin-bottom: 16px; }
+.ticket, .reminder { font-size: 14.5px; padding-block: 4px 12px; }
+.lbl { display: block; font-family: var(--mono); font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 4px; }
+.exchange { border-top: 1px solid var(--line); padding-block: 12px; display: grid; gap: 10px; min-width: 0; }
+.ex-head { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.who { font-weight: 600; font-size: 14px; }
+.plan { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; font-size: 14px; }
+.plan ul, .plan ol, .explain { margin: 0; padding-left: 20px; display: grid; gap: 2px; }
+.plan li, .explain li { overflow-wrap: anywhere; }
+.reply { background: var(--code-bg); border-radius: 8px; padding: 12px 14px; display: grid; gap: 8px; min-width: 0; }
+.explain { font-size: 14.5px; }
+.raw summary { cursor: pointer; font-size: 13px; color: var(--accent); }
+.raw pre { margin: 8px 0 0; padding: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; overflow-x: auto; font-size: 12.5px; line-height: 1.45; }
+.nothing { font-size: 13.5px; color: var(--muted); }
+.final { border-top: 1px dashed var(--line); padding-top: 10px; font-size: 14px; }
+.final p { color: var(--muted); white-space: pre-line; overflow-wrap: anywhere; }
+@media (prefers-reduced-motion: no-preference) { .chip, .tool { transition: border-color .15s, color .15s; } }
+</style>
+
+<div class="wrap">
+<header class="prose">
+  <span class="eyebrow">planproof · agent evaluation · 17 October 2026</span>
+  <h1>Planproof Model Trials</h1>
+  <p class="lede">Four AI models wrote Kubernetes change plans for 13 tickets. A small checker, the kernel, decided which plans were safe. Here is how the two work together, how each model did over {{TOTAL_RUNS}} runs, and every one of the {{TOTAL_REPLIES}} replies the kernel sent back.</p>
+</header>
+
+<section id="how">
+  <div class="prose">
+    <h2>How the kernel and the model work together</h2>
+    <p>Think of a change to a live system as building work on an occupied building. Someone has to plan it, someone has to check the plan, and only then does anyone pick up a tool. planproof splits those jobs so that no single part can do harm on its own.</p>
+  </div>
+  <div class="roles">
+    <div class="role"><span class="who">The planner</span><h3>The AI model</h3>
+      <p>Like a fast, capable contractor you can't hold accountable. It reads the ticket ("drain nodes n1 and n2"), a snapshot of the cluster and the house rules, and writes a plan: what will change, and the steps to get there. It has no access to the cluster, so it can't change anything itself.</p></div>
+    <div class="role"><span class="who">The checker</span><h3>The kernel</h3>
+      <p>Like an inspector with an exact scale model of the building. It never touches the real cluster. It plays the plan forward on its copy, one step at a time, imagining the worst moment of each step, and checks the rules: enough copies of each service stay up, every moved app has room somewhere, the policy's limits hold, and the plan changes exactly what it says it will, nothing more.</p></div>
+  </div>
+  <ol class="flow" aria-label="One ticket, step by step">
+    <li><div><b>The model writes a plan</b> and submits it through its one tool, <code>submit_plan</code>.</div></li>
+    <li><div><b>The kernel checks it</b> in a fraction of a second and gives one of three answers:
+      <div class="branch"><span class="verdict ok">Proved</span><span class="verdict bad">Refuted</span><span class="verdict warn">Unknown</span></div>
+      <p class="muted">Refuted means a rule breaks at a named step. Unknown means the plan depends on something the kernel can't model, such as an autoscaler that changes the app on its own.</p></div></li>
+    <li><div><b>If it isn't proved, the kernel replies.</b> The reply names the step, the rule and the numbers, plus a plain sentence ("During step 4, only 1 checkout pod is ready. The disruption budget for checkout needs at least 2."). If it is proved, the kernel says nothing and the conversation ends.</div></li>
+    <li><div><b>The model revises</b> and submits again, up to 4 submissions in all. Or it stops and says <code>NO SAFE PLAN</code> with a reason, so a person can take over.</div></li>
+    <li><div><b>A person reads the goal</b> of a proved plan and checks it is what the ticket asked for. This is the one thing the kernel can't know.</div></li>
+    <li><div><b>The executor runs the plan</b>, re-checking the live cluster before every step and stopping at the first surprise. (Not part of these trials, which test planning only.)</div></li>
+  </ol>
+  <div class="callout">
+    <h3>What the kernel can't catch</h3>
+    <p>The kernel checks a plan against its own goal, not against the ticket. In the first Haiku runs, the ticket named an image by a 64-character fingerprint and Haiku copied it with 65 characters, in both the goal and the steps. The plan was consistent and safe, so the kernel proved it, for an image nobody asked for. A person reading the goal would have had to spot one extra character. After that, the kernel learned to reject a fingerprint that isn't exactly 64 characters (kernel 0.2.0), and the same mistake became a plain refusal.</p>
+  </div>
+</section>
+
+<section id="results">
+  <div class="prose">
+    <h2>Results</h2>
+    <p>Each configuration ran the 13 tickets: 9 that can be done safely and 4 that can't (the policy forbids it, there's no room, or an autoscaler is in the way). A run passes a solvable ticket only if the plan is proved <em>and</em> its goal is exactly what the ticket asked. It passes an impossible ticket only if the model says no safe plan.</p>
+  </div>
+  <div class="scroll"><table>
+    <thead><tr><th scope="col">Model</th><th scope="col">Runs</th><th scope="col">Solvable<br>solved</th><th scope="col">Impossible<br>declined</th><th scope="col">First plan<br>proved</th><th scope="col">Fixed after<br>a kernel reply</th><th scope="col">Proved,<br>wrong goal</th><th scope="col">Declined a<br>solvable one</th><th scope="col">Cost</th></tr></thead>
+    <tbody>
+{{TABLE}}
+    </tbody>
+  </table></div>
+  <p class="note">Effort "high" for the Claude models. "First plan proved" counts runs where the very first submission was proved; impossible tickets have none by design. Prompt v2 fixed a misleading sentence about protected apps (see the Opus and Sonnet replies to <code>three-cordoned</code>). Costs are measured from the API's token counts; Haiku's cache prices are assumed at the usual rate.</p>
+  <h3>Every ticket, every configuration</h3>
+  <div class="scroll"><table class="grid">
+    <thead><tr><th scope="col">Ticket</th>{{GRID_HEAD}}</tr></thead>
+    <tbody>
+{{GRID}}
+    </tbody>
+  </table></div>
+  <p class="note">Runs passed out of runs made. Green: all passed. Amber: some. Red: none.</p>
+</section>
+
+<section id="replies">
+  <div class="prose">
+    <h2>Every reply the kernel sent</h2>
+    <p>The kernel replied {{TOTAL_REPLIES}} times, in {{REPLY_RUNS}} of the runs. In all the others the first plan was proved, or the model declined without submitting, so there was nothing to say. Each reply below was rebuilt by checking the stored plan again with the kernel version that run used; every rebuilt verdict matches the one recorded at the time, so these are the exact messages the models received.</p>
+    <p class="muted">How to read a reply: <code>result</code> is the verdict; <code>failures</code> lists each broken rule with the step, the moment (<code>during</code>, <code>after</code>, <code>static</code> for checks before any step) and the numbers; <code>explanation</code> is the same plain sentence a person sees; <code>submissionsLeft</code> counts down from 4.</p>
+  </div>
+  <div class="chips" role="group" aria-label="Show replies for">
+    <button type="button" class="tool" id="toggle-all">Open all</button>
+    {{CHIPS}}
+  </div>
+  <div class="runs" id="runs">
+{{RUNS}}
+  </div>
+</section>
+</div>
+
+<script>
+(() => {
+  const chips = [...document.querySelectorAll(".chip")];
+  const runs = [...document.querySelectorAll(".run")];
+  const apply = () => {
+    const on = chips.filter(c => c.getAttribute("aria-pressed") === "true").map(c => c.dataset.chip);
+    runs.forEach(r => { r.hidden = on.length > 0 && !on.includes(r.dataset.filter); });
+  };
+  chips.forEach(c => c.addEventListener("click", () => {
+    c.setAttribute("aria-pressed", c.getAttribute("aria-pressed") === "true" ? "false" : "true");
+    apply();
+  }));
+  const toggle = document.getElementById("toggle-all");
+  toggle.addEventListener("click", () => {
+    const open = toggle.textContent === "Open all";
+    runs.filter(r => !r.hidden).forEach(r => { r.open = open; });
+    toggle.textContent = open ? "Close all" : "Open all";
+  });
+})();
+</script>
