@@ -20,7 +20,7 @@ module.exports = { shorts: {
       { show: 3, say: 'Three AI models, reviewing the raw plan, approved it every time. Given the checker’s report, they rejected it.' },
     ] },
     { id: 'end', visual: { type: 'end' }, beats: [
-      { say: 'The checker is called planproof. The full video and the write-up are linked.' },
+      { say: 'The checker is called planproof: a demo of how such a check can work, not a production system. The full video and the write-up are linked.' },
     ] },
   ] },
 
@@ -48,7 +48,7 @@ module.exports = { shorts: {
       { show: 2, say: 'But the lesson stands: make the person’s job one clear question. Is this goal what we asked for?' },
     ] },
     { id: 'end', visual: { type: 'end' }, beats: [
-      { say: 'The checker is called planproof. The full video and the write-up are linked.' },
+      { say: 'The checker is called planproof: a demo of how such a check can work, not a production system. The full video and the write-up are linked.' },
     ] },
   ] },
 
@@ -74,7 +74,7 @@ module.exports = { shorts: {
       { show: 1, say: 'These are AI reviewers, not people. A study with people is the real test.' },
     ] },
     { id: 'end', visual: { type: 'end' }, beats: [
-      { say: 'The checker is called planproof. The full video and the write-up are linked.' },
+      { say: 'The checker is called planproof: a demo of how such a check can work, not a production system. The full video and the write-up are linked.' },
     ] },
   ] },
 } };

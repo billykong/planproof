@@ -6,7 +6,7 @@ Times below come from `out/video/timings.json`; update them if the script change
 
 ## The video
 
-**File:** `out/video/video.mp4` (10:35, 1920x1080). **Thumbnail:** `out/video/thumbnail.png`.
+**File:** `out/video/video.mp4` (10:47, 1920x1080). **Thumbnail:** `out/video/thumbnail.png`.
 
 **Title:**
 
@@ -14,19 +14,19 @@ Times below come from `out/video/timings.json`; update them if the script change
 
 **Description:**
 
-    AI agents can now write the plans that change production systems. planproof checks each plan with a small, rule-based checker (no AI, about 1,700 lines of Go) and explains the result in plain English. What it is, why it can be trusted, the evidence, and the decades of public work it builds on.
+    AI agents can now write the plans that change production systems. planproof checks each plan with a small, rule-based checker (no AI, about 1,700 lines of Go) and explains the result in plain English. It's a demo of how such a check can work, not a production system. What it is, why it can be trusted, the evidence, and the decades of public work it builds on.
 
     00:00 Who checks the AI's plan?
-    01:05 A student and a strict examiner
-    01:32 How it fits together
-    02:10 How the checker thinks
-    03:02 A plan that looks fine, and one that does too much
-    03:59 Why trust the checker
-    05:27 What the person still does
-    06:20 The evidence: AI models, bad plans, a policy gate, AI reviewers
-    08:40 What it doesn't do
-    09:11 Built on decades of public work
-    09:42 The short version
+    01:09 A student and a strict examiner
+    01:36 How it fits together
+    02:15 How the checker thinks
+    03:07 A plan that looks fine, and one that does too much
+    04:04 Why trust the checker
+    05:31 What the person still does
+    06:25 The evidence: AI models, bad plans, a policy gate, AI reviewers
+    08:44 What it doesn't do
+    09:23 Built on decades of public work
+    09:54 The short version
 
     Code, specification, tests and every result (MIT): https://github.com/billykong/planproof
     The full write-up, with every source: https://billykong.github.io/planproof/
@@ -42,13 +42,13 @@ Upload each as a normal video; a vertical video under three minutes becomes a Sh
 
 | File | Title |
 | --- | --- |
-| `out/short-looks-fine/short-looks-fine.mp4` (0:49) | This AI plan looks fine. It isn't. #shorts |
-| `out/short-wrong-goal/short-wrong-goal.mp4` (0:52) | My checker proved the wrong plan #shorts |
-| `out/short-reviewers/short-reviewers.mp4` (0:45) | AI reviewers caught 12 of 18 bad plans. Then 18. #shorts |
+| `out/short-looks-fine/short-looks-fine.mp4` (0:53) | This AI plan looks fine. It isn't. #shorts |
+| `out/short-wrong-goal/short-wrong-goal.mp4` (0:56) | My checker proved the wrong plan #shorts |
+| `out/short-reviewers/short-reviewers.mp4` (0:49) | AI reviewers caught 12 of 18 bad plans. Then 18. #shorts |
 
 **Description (same for all three):**
 
-    planproof: a small checker, with no AI in it, for AI-written change plans. Full video: [video link]
+    planproof: a demo of a small checker, with no AI in it, for AI-written change plans. Not a production system. Full video: [video link]
     Write-up: https://billykong.github.io/planproof/
     Code (MIT): https://github.com/billykong/planproof
     Script drafted with AI and checked by me; AI voice; all checker output is from real runs.

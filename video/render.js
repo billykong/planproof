@@ -18,7 +18,7 @@ const t = (x, y, s, size, fill, font = sans, weight = 400, extra = '') =>
   `<text x="${x}" y="${y}" font-family="${font}" font-size="${size}" font-weight="${weight}" fill="${fill}" ${extra}>${esc(s)}</text>`;
 const frame = inner => `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
 <defs><pattern id="g" width="64" height="64" patternUnits="userSpaceOnUse"><path d="M64 0H0V64" fill="none" stroke="${C.grid}" stroke-width="1.5"/></pattern>
-<marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="${C.dim}"/></marker></defs>
+</defs>
 <rect width="${W}" height="${H}" fill="${C.bg}"/><rect width="${W}" height="${H}" fill="url(#g)" opacity="0.6"/>
 <rect x="0" y="0" width="16" height="${H}" fill="${C.teal}"/>${inner}</svg>`;
 // Shorts keep text out of the bottom ~420 px and the right edge, where
@@ -120,19 +120,27 @@ const V = {
     };
     const hl = new Set(b.hl || []);
     const side = (k, d) => { const [x, y, w] = N[k]; return d === 'r' ? [x + w / 2, y] : d === 'l' ? [x - w / 2, y] : d === 'u' ? [x, y - BH / 2] : [x, y + BH / 2]; };
-    const edge = (a, ad, z, zd, txt = '', col = C.dim) => {
-      const [x1, y1] = side(a, ad), [x2, y2] = side(z, zd);
-      const d = ad === 'u' || ad === 'd' ? `M${x1} ${y1}V${y2}` : y1 === y2 ? `M${x1} ${y1}H${x2}` : `M${x1} ${y1}H${x2}V${y2}`;
-      return `<path d="${d}" fill="none" stroke="${col}" stroke-width="3" marker-end="url(#ah)"/>` + txt;
+    // resvg ignores a marker's orient="auto", so each arrowhead is drawn
+    // here, pointing along the last segment of its line.
+    const arrow = (pts, col = C.dim) => {
+      const [[px, py], [x, y]] = pts.slice(-2), a = Math.atan2(y - py, x - px), L = 18, Wd = 9;
+      const bx = x - L * Math.cos(a), by = y - L * Math.sin(a), nx = -Math.sin(a) * Wd, ny = Math.cos(a) * Wd;
+      return `<polyline points="${pts.slice(0, -1).concat([[bx, by]]).map(p => p.join(',')).join(' ')}" fill="none" stroke="${col}" stroke-width="3"/>`
+        + `<path d="M${x} ${y}L${bx + nx} ${by + ny}L${bx - nx} ${by - ny}Z" fill="${col}"/>`;
     };
+    const edge = (a, ad, z, zd) => {
+      const [x1, y1] = side(a, ad), [x2, y2] = side(z, zd);
+      return arrow(ad === 'u' || ad === 'd' || y1 === y2 ? [[x1, y1], [x2, y2]] : [[x1, y1], [x2, y1], [x2, y2]]);
+    };
+    const cl = N.checker[0] - 170, cr = N.checker[0] + 170, ar = N.ai[0] + 140;
     let s = label('HOW IT FITS TOGETHER')
       + edge('ticket', 'r', 'ai', 'l')
-      + `<path d="M${N.ai[0] + 150} ${N.ai[1] - 22}H${N.checker[0] - 170}" fill="none" stroke="${C.dim}" stroke-width="3" marker-end="url(#ah)"/>`
-      + `<path d="M${N.checker[0] - 170} ${N.ai[1] + 22}H${N.ai[0] + 150}" fill="none" stroke="${C.amber}" stroke-width="3" marker-end="url(#ah)"/>`
+      + arrow([[ar, N.ai[1] - 22], [cl, N.ai[1] - 22]])
+      + arrow([[cl, N.ai[1] + 22], [ar, N.ai[1] + 22]], C.amber)
       + t(845, 432, 'plan', 24, C.dim, mono, 400, 'text-anchor="middle"')
-      + t(845, 530, 'refuted: step + reason', 22, C.amber, mono, 400, 'text-anchor="middle"')
+      + t(845, 580, 'refuted: step + reason', 22, C.amber, mono, 400, 'text-anchor="middle"')
       + edge('snapshot', 'd', 'checker', 'u')
-      + `<path d="M${N.policy[0]} ${N.policy[1] + BH / 2}V${N.checker[1]}H${N.checker[0] + 170}" fill="none" stroke="${C.dim}" stroke-width="3" marker-end="url(#ah)"/>`
+      + arrow([[N.policy[0], N.policy[1] + BH / 2], [N.policy[0], N.checker[1]], [cr, N.checker[1]]])
       + edge('checker', 'd', 'person', 'u') + t(1150, 600, 'proved + report', 24, C.green, mono)
       + edge('person', 'd', 'executor', 'u') + edge('executor', 'r', 'cluster', 'l');
     for (const [k, [x, y, w, a, sub]] of Object.entries(N)) {
@@ -231,7 +239,7 @@ const V = {
         + lines(X, 420, 'Checking AI-written change plans', W - 2 * X, 64, C.fg, 700).svg
         + card(640, 'CODE · MIT', 'github.com/billykong/planproof')
         + card(810, 'WRITE-UP', 'billykong.github.io/planproof')
-        + card(980, 'FULL VIDEO', 'linked below')
+        + card(980, 'A DEMO, NOT A PRODUCT', 'full video linked below')
         + t(X, 1220, 'Scripted with AI; AI voice.', 34, C.muted)
         + t(X, 1270, 'All checker output is from real runs.', 34, C.muted));
     }
