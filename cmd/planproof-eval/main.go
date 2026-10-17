@@ -10,6 +10,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"encoding/json"
 	"flag"
@@ -45,6 +46,21 @@ func main() {
 		run(os.Args[2:])
 	case "seeded":
 		seeded(os.Stdout)
+	case "responses":
+		var recs []Record
+		asJSON := false
+		for _, p := range os.Args[2:] {
+			if p == "--json" {
+				asJSON = true
+				continue
+			}
+			recs = append(recs, read(p)...)
+		}
+		if asJSON {
+			responsesJSON(os.Stdout, recs)
+		} else {
+			responses(os.Stdout, recs)
+		}
 	case "summary":
 		var recs []Record
 		for _, p := range os.Args[2:] {
@@ -298,6 +314,96 @@ func summary(w io.Writer, recs []Record) {
 		}
 		fmt.Fprintf(w, "| %s |\n", strings.Join(row, " | "))
 	}
+}
+
+// responses rebuilds what the kernel sent back to the model in each run:
+// the kernel is deterministic, so checking each stored plan again gives
+// exactly the tool result the loop sent (agent.Run: after every submission
+// except a Proved one or the last allowed one).
+func responses(w io.Writer, recs []Record) {
+	root := evals.Root()
+	specs, err := evals.Load(root)
+	if err != nil {
+		fail(err)
+	}
+	byID := map[string]evals.Spec{}
+	for _, s := range specs {
+		byID[s.ID] = s
+	}
+	const maxTries = 4
+	for _, r := range recs {
+		if len(r.Attempts) == 0 && !r.Nudged {
+			continue
+		}
+		task, err := byID[r.Task].Task(root)
+		if err != nil {
+			fail(err)
+		}
+		fmt.Fprintf(w, "### %s, %s: %s\n\n", r.Model, r.Task, r.Grade.Outcome)
+		for i, a := range r.Attempts {
+			fmt.Fprintf(w, "Submission %d: %s\n\n", i+1, a.Result)
+			if a.Result == kernel.Proved || i+1 >= maxTries {
+				fmt.Fprintf(w, "(nothing sent back: the loop stops here)\n\n")
+				continue
+			}
+			v := kernel.Check(task.Snapshot, agent.Plan(task, a.Plan), task.Policy)
+			var pretty bytes.Buffer
+			json.Indent(&pretty, []byte(agent.Feedback(v, maxTries-(i+1))), "", "  ")
+			fmt.Fprintf(w, "```json\n%s\n```\n\n", pretty.String())
+		}
+		if r.Nudged {
+			fmt.Fprintf(w, "Reminder sent once: %q\n\n", agent.Reminder)
+		}
+	}
+}
+
+// Exchange is one submission and what the kernel sent back, if anything.
+type Exchange struct {
+	N        int             `json:"n"`
+	Plan     json.RawMessage `json:"plan"`
+	Result   kernel.Result   `json:"result"`
+	Response json.RawMessage `json:"response,omitempty"` // null: nothing sent (Proved, or the last allowed submission)
+}
+
+// responsesJSON is responses as data, one object per run.
+func responsesJSON(w io.Writer, recs []Record) {
+	root := evals.Root()
+	specs, err := evals.Load(root)
+	if err != nil {
+		fail(err)
+	}
+	byID := map[string]evals.Spec{}
+	for _, s := range specs {
+		byID[s.ID] = s
+	}
+	const maxTries = 4
+	type run struct {
+		Model, Task, Ticket, Outcome, Final, Reminder string
+		Pass                                          bool
+		Exchanges                                     []Exchange
+	}
+	var out []run
+	for _, r := range recs {
+		task, err := byID[r.Task].Task(root)
+		if err != nil {
+			fail(err)
+		}
+		x := run{Model: r.Model, Task: r.Task, Ticket: byID[r.Task].Ticket, Outcome: r.Grade.Outcome, Pass: r.Grade.Pass, Final: r.Final, Exchanges: []Exchange{}}
+		if r.Nudged {
+			x.Reminder = agent.Reminder
+		}
+		for i, a := range r.Attempts {
+			e := Exchange{N: i + 1, Plan: a.Plan, Result: a.Result}
+			if a.Result != kernel.Proved && i+1 < maxTries {
+				v := kernel.Check(task.Snapshot, agent.Plan(task, a.Plan), task.Policy)
+				e.Response = json.RawMessage(agent.Feedback(v, maxTries-(i+1)))
+			}
+			x.Exchanges = append(x.Exchanges, e)
+		}
+		out = append(out, x)
+	}
+	b, _ := json.MarshalIndent(out, "", " ")
+	w.Write(append(b, '\n'))
 }
 
 // seeded writes the seeded-plan table (E-11, E-21).
