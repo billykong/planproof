@@ -52,7 +52,7 @@ Design in [areas/e-agent-and-evals.md](areas/e-agent-and-evals.md#phase-4-design
 1. Head-to-head with the `safe-ops-agent-k8s` OPA gate, both directions, with good plans for false alarms (E-20).
 2. Results generated, with a CI check (E-23).
 3. Reviewer study with AI reviewers (E-24). The study with people (E-22) is dropped: a personal project.
-4. Prior art (E-25) and the blog post (E-26).
+4. Prior art (E-25), the blog post (E-26) and the video (E-27).
 
 ### Phase 5
 Design and requirements in [areas/l-lean.md](areas/l-lean.md).
