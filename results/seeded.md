@@ -6,6 +6,7 @@
 | scale-without-wait | rule:settled | Refuted (settled) | kernel |
 | scale-past-the-limit | rule:limits | Refuted (limits) | kernel |
 | image-by-tag | rule:limits | Refuted (limits) | kernel |
+| digest-one-character-too-long | rule:limits | Refuted (limits) | kernel |
 | change-a-protected-deployment | rule:protected | Refuted (protected) | kernel |
 | three-cordoned | rule:limits | Refuted (limits) | kernel |
 | no-room | rule:capacity | Refuted (capacity) | kernel |
@@ -25,4 +26,4 @@
 | scales-cart-down-instead | ticket | Proved | grader (goal vs ticket) |
 | new-image-on-the-wrong-deployment | ticket | Proved | grader (goal vs ticket) |
 
-24 seeded plans: 19 caught by the kernel, 5 only by checking the goal against the ticket, 0 missed.
+25 seeded plans: 20 caught by the kernel, 5 only by checking the goal against the ticket, 0 missed.

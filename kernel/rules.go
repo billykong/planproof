@@ -56,7 +56,10 @@ func (r *run) static() {
 	limit := func(field string, value any, limit int64) {
 		r.fail("limits", ref, "static", "", map[string]any{"field": field, "value": value, "limit": limit})
 	}
-	noDigest := func(image string) bool { return *lim.RequireImageDigest && !strings.Contains(image, "@sha256:") }
+	noDigest := func(image string) bool { // pinned: name@sha256:<64 hex>, nothing after
+		_, digest, ok := strings.Cut(image, "@")
+		return *lim.RequireImageDigest && !(ok && isHash(digest))
+	}
 	for _, s := range steps {
 		switch {
 		case s.Op == "scale" && *s.Replicas > *lim.MaxReplicas:

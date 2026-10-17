@@ -137,7 +137,7 @@ CAUTION: DO NOT APPROVE THIS PLAN.
 | `assertions` | Step {s} expects `{key}` of `{object}` to be {expected}. The value is {actual}. |
 | `scope` | Not managed: "The plan names `{object}`. The policy does not let plans change it." Not in the snapshot: "The plan names `{object}`. The snapshot does not have it." (or "container `{c}` in `{object}`") |
 | `protected` | The plan names `{object}`. The policy does not let plans change it. |
-| `limits` | "{When}, {x} nodes stop new pods. The limit is {lim}." / "{When}, only {x} nodes accept new pods. The limit is {lim}." / "The plan asks for {x} pods. The limit is {lim}." / "A wait step can take {x} seconds. The limit is {lim} seconds." / "The image `{image}` has no digest. The policy needs a digest." |
+| `limits` | "{When}, {x} nodes stop new pods. The limit is {lim}." / "{When}, only {x} nodes accept new pods. The limit is {lim}." / "The plan asks for {x} pods. The limit is {lim}." / "A wait step can take {x} seconds. The limit is {lim} seconds." / "The image `{image}` has no valid digest. The policy needs a digest." |
 | `input` | The {plan / snapshot / policy} file is not correct. Problem: `{reason}` at `{path}`. (Without "at" when there is no path.) |
 | `rollback` | At a rollback step: the inner rule's sentences, which already say "rollback step {s}". Fields not restored: "The rollback does not restore this item." then one change sentence per field. |
 

@@ -118,7 +118,7 @@ var templates = map[string]string{
 	"failure.limits.minSchedulableNodes":   "{When}, only {x} nodes accept new pods. The limit is {lim}.",
 	"failure.limits.replicas":              "The plan asks for {x} pods. The limit is {lim}.",
 	"failure.limits.timeoutSeconds":        "A wait step can take {x} seconds. The limit is {lim} seconds.",
-	"failure.limits.image":                 "The image {image} has no digest. The policy needs a digest.",
+	"failure.limits.image":                 "The image {image} has no valid digest. The policy needs a digest.",
 	"failure.input":                        "The {input} file is not correct. Problem: {reason}.",
 	"failure.input.at":                     "The {input} file is not correct. Problem: {reason} at {path}.",
 	"failure.rollback.notRestored":         "The rollback does not restore this item.",

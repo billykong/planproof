@@ -174,6 +174,8 @@ steps: [{op: cordon, node: n3}, {op: drain, node: n3}, {op: wait, deployments: [
 
 	{Name: "limits: replicas", Plan: scaleTo(21), Want: "Refuted", Rule: "limits"},
 	{Name: "limits: wait timeout", Plan: strings.Replace(drainN1, "300", "601", 1), Want: "Refuted", Rule: "limits"},
+	{Name: "limits: a digest one character too long", Plan: fmt.Sprintf(imageCart, newDigest+"d"), Want: "Refuted", Rule: "limits"},
+	{Name: "limits: a digest that isn't hex", Plan: fmt.Sprintf(imageCart, strings.Replace(newDigest, "d", "g", 1)), Want: "Refuted", Rule: "limits"},
 	{Name: "limits: image without digest", Plan: fmt.Sprintf(imageCart, "registry.example/cart:latest"), Want: "Refuted", Rule: "limits"},
 	{Name: "limits: too many nodes cordoned", Plan: `
 goal: [{node: n1, field: unschedulable, from: false, to: true}, {node: n2, field: unschedulable, from: false, to: true}, {node: n3, field: unschedulable, from: false, to: true}]

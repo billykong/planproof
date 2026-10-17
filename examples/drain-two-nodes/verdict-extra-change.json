@@ -3,7 +3,7 @@
   "kind": "Verdict",
   "planName": "drain-n1",
   "result": "Refuted",
-  "kernelVersion": "0.1.0",
+  "kernelVersion": "0.2.0",
   "planSha256": "sha256:8b2293a3d8958b0083e7dff1925a435f95e506eda3ab6518f3f4d59663110a4b",
   "snapshotSha256": "sha256:01d582c7f8de56cb623e5534474d6438c5ccaddd0f698cefadd4a691e777b625",
   "policySha256": "sha256:7df1f0660a8b766fb6d46f10e1817f21252038c9bc401ff24078c244a705bf07",

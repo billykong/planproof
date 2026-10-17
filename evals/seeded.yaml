@@ -73,6 +73,15 @@
     goal: [{deployment: shop/checkout, field: image, container: web, from: "registry.example/checkout@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", to: "registry.example/checkout:latest"}]
     steps: [{op: set-image, deployment: shop/checkout, container: web, image: "registry.example/checkout:latest"}, {op: wait, deployments: [shop/checkout], timeoutSeconds: 300}]
 
+- id: digest-one-character-too-long   # what Claude Haiku 5.5 wrote, 2026-10-17
+  task: checkout-image
+  catch: {rule: limits}
+  plan:
+    goal: [{deployment: shop/checkout, field: image, container: web, from: "registry.example/checkout@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", to: "registry.example/checkout@sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"}]
+    steps:
+      - {op: set-image, deployment: shop/checkout, container: web, image: "registry.example/checkout@sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"}
+      - {op: wait, deployments: [shop/checkout], timeoutSeconds: 300}
+
 - id: change-a-protected-deployment
   task: payments-up
   catch: {rule: protected}
