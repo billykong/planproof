@@ -141,6 +141,31 @@ td.bad, td.warn { font-weight: 600; }
   </div>
 </section>
 
+<section id="model">
+  <div class="prose">
+    <h2>How the kernel keeps a model of the cluster</h2>
+    <p>Think of an architect's scale model of a building, or a chess player trying moves on a board in their head before touching the real one. The kernel does the same with the cluster, in four parts.</p>
+  </div>
+  <ol class="flow" aria-label="How the model is built and used">
+    <li><div><b>A photograph first.</b> A separate read-only program, the fetcher, takes a snapshot of the real cluster: the machines (how much CPU, memory and room for apps each has, and whether it's closed to new apps), the apps (how many copies each should run, how many are healthy, how upgrades are done), every running copy (which machine it's on, how big it is, which app it belongs to), and the safety minimums ("checkout must always have at least 2 healthy copies"). The plan names that snapshot by its fingerprint, so it can't be checked against a different or out-of-date picture.</div></li>
+    <li><div><b>The photo becomes a board game.</b> Machines become boxes with a capacity. Each copy of an app becomes a token in a box, in one of four states:
+      <div class="branch"><span class="pill ok">healthy, known box</span><span class="pill ok">healthy, could be in any of these boxes</span><span class="pill warn">being recreated</span><span class="pill warn">mid-upgrade</span></div></div></li>
+    <li><div><b>Each step is a rule for moving tokens.</b> Cordon puts a "no entry" sign on a box. Drain lifts every token out of that box, including any that might be in it; they stop serving, and the kernel fits them into the open boxes, biggest first, each into the first box with room. Wait makes recreated tokens healthy again. Scale adds or removes tokens. An upgrade keeps a known minimum of tokens serving until the next wait.</div></li>
+    <li><div><b>After every step, it counts</b>, at the worst moment of the step: does each app keep its minimum of healthy tokens, did any app drop to zero, did every moved token find a box, are the policy's limits respected? At the end: did the plan change exactly what it said it would?</div></li>
+  </ol>
+  <div class="roles">
+    <div class="role"><span class="who">Habit</span><h3>When unsure, assume the worst</h3>
+      <p>If a moved copy could be in any of three boxes, the kernel counts it as being in whichever box you drain next. That's why the planners learned to cordon every node before the first drain: it removes the uncertainty.</p></div>
+    <div class="role"><span class="who">Habit</span><h3>When it can't model something, say Unknown</h3>
+      <p>An autoscaler that changes copy counts on its own, or rules about which machines an app may use, aren't part of the game. The kernel answers Unknown rather than guess, and the plan goes to a person.</p></div>
+  </div>
+  <div class="prose">
+    <h3>Why this part can be trusted</h3>
+    <p>Parts 2 to 4 are the kernel, and none of it is AI. It is about 1,700 lines of ordinary code: no model, no network, no clock, nothing outside Go's standard library, all enforced in CI. The same plan and snapshot always give the same answer, so anyone can re-run a check and get the identical verdict. The rule for each kind of step fits on one page of the specification, and every rule is tested on a plan it must refuse and a nearby plan it must accept. That is where "small enough to review and trust" comes from: the clever, unpredictable part (the AI planner) is outside, and the part that decides is small, plain and checkable.</p>
+    <p>Correct code isn't quite enough on its own: the rules also have to be a faithful picture of how Kubernetes behaves. So the predictions were compared with a real cluster, running each kind of step for real. The real cluster never did worse than the kernel predicted, and in every case it matched the prediction exactly. What the game leaves out (timing, networking, whether a new version of an app actually starts) is listed as an assumption in every review packet, under "Not checked".</p>
+  </div>
+</section>
+
 <section id="results">
   <div class="prose">
     <h2>Results</h2>
