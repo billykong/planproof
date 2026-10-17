@@ -19,7 +19,7 @@ flowchart LR
 | 2 | Fetcher, executor, model-fidelity tests on kind (C area). **Done** 2026-10-16 | Each operation's predicted state matches kind; the executor stops on drift and on a wait timeout; translation check passes |
 | 3 | Agent loop and evals (E area). **Done** 2026-10-17 | A model writes plans for the seeded tasks and repairs them from Refuted facts; Proved / Refuted / Unknown rates reported |
 | 4 | Measurement. **Done** 2026-10-17 | Seeded bad plans through both planproof and the `safe-ops` gate; AI reviewers, packet vs raw plan (the study with people dropped); results published |
-| 5 | Stretch: Lean 4 model of the semantics, a soundness proof for the checker, and differential tests between the Go kernel and the Lean model | Proof checks in CI; differential tests run on every PR |
+| 5 | Stretch, started 2026-10-17: Lean 4 model of the semantics, a soundness proof for the checker's core rules, and differential tests between the Go kernel and the Lean model ([L area](areas/l-lean.md)) | Proof checks in CI; differential tests run on every PR |
 
 ## Milestones
 
@@ -53,6 +53,14 @@ Design in [areas/e-agent-and-evals.md](areas/e-agent-and-evals.md#phase-4-design
 2. Results generated, with a CI check (E-23).
 3. Reviewer study with AI reviewers (E-24). The study with people (E-22) is dropped: a personal project.
 4. Prior art (E-25) and the blog post (E-26).
+
+### Phase 5
+Design and requirements in [areas/l-lean.md](areas/l-lean.md).
+1. Lean toolchain, Lake project, CI with the no-escape-hatch checks (L-01 to L-03).
+2. The specification in Lean: state, operations, core rules, concrete placements (L-10 to L-12).
+3. The executable Lean checker for all 13 rules, `planproof-lean`, and differential tests against the Go kernel on the corpus and on generated plans (L-13, L-20 to L-22).
+4. Proofs: frame and cordon-first, then limits, then capacity by witness, then budget and never-zero over concrete placements; the main theorem (L-30 to L-35).
+5. Documentation of what is proved and what is tested (L-40, L-41).
 
 ## Open questions
 

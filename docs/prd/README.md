@@ -15,6 +15,7 @@ This folder is the product requirements document (PRD): what we're building, why
 | [areas/c-cluster.md](areas/c-cluster.md) | C: fetcher, executor and model-fidelity tests |
 | [areas/e-agent-and-evals.md](areas/e-agent-and-evals.md) | E: the agent loop, seeded plans and measurement |
 | [areas/t-cli.md](areas/t-cli.md) | T: the `planproof` command and strict YAML conversion |
+| [areas/l-lean.md](areas/l-lean.md) | L: the Lean model, proofs and differential tests (phase 5) |
 
 ## Status at a glance
 
@@ -28,6 +29,7 @@ This folder is the product requirements document (PRD): what we're building, why
 | T CLI | **Done**: `check`, `render`, `hash`; strict YAML conversion. Open: an automated check for T-07 |
 | C Cluster | **Done for phase 2**: fetcher, executor, model fidelity (the predicted lowest matched the real cluster exactly in every case), translation check. Open: C-22 (2 of 8 triggers); gaps in [known-gaps.md](../known-gaps.md) |
 | E Agent and evals | **Phase 3 done**: Claude Opus 5.5 and Sonnet 5.5 39/39 over three runs, twice; Claude Haiku 5.5 36/39 with 2 plans proved with the wrong goal (a mistyped image digest), then 37/39 with none once kernel 0.2.0 checked the digest's form; Qwen2.5-1.5B 0/9 solvable (not a fair comparison); 25 seeded plans, none missed. **Phase 4 done**: safe-ops comparison, generated results, AI reviewers, prior art, [blog post](https://billykong.github.io/planproof/); E-22 (people) dropped |
+| L Lean model and proofs | **Planned** (phase 5): core rules proved (frame, budget, never-zero, cordon-first, limits, capacity by witness); differential tests against the Go kernel; core Lean only |
 
 ## Conventions
 

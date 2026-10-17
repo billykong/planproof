@@ -1,0 +1,4 @@
+#title the kernel's size budget, checked in CI
+$ scripts/kernel-budget.sh
+kernel: 1695 non-blank, non-comment lines (budget 1800)
+#@ budget

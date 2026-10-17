@@ -1,0 +1,20 @@
+#title planproof check · a plan for OPS-1043
+$ cat plan-extra-change.yaml
+  name: drain-n1
+  ticket: "OPS-1043: upgrade node n1"
+rationale: "Drain n1 for the upgrade. Also add a cart pod for extra room."
+goal:
+  - {node: n1, field: unschedulable, from: false, to: true}
+  - {node: n1, field: drained, from: false, to: true}
+steps:
+  - {op: cordon, node: n1, pre: {unschedulable: false}}
+  - {op: drain, node: n1}
+  - {op: wait, deployments: [shop/checkout, shop/cart], timeoutSeconds: 300}
+  - {op: scale, deployment: shop/cart, replicas: 3}
+  - {op: wait, deployments: [shop/cart], timeoutSeconds: 300}
+#@ plan
+$ planproof check --snapshot snapshot.json --plan plan-extra-change.yaml --policy policy.yaml --output packet
+CAUTION: DO NOT APPROVE THIS PLAN.
+The plan makes a change that the goal does not list.
+The number of `shop/cart` pods changes from 2 to 3.
+#@ verdict

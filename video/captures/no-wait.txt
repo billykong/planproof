@@ -1,0 +1,22 @@
+#title planproof check · a plan for OPS-1042
+$ cat plan-no-wait.yaml
+  name: drain-two-nodes-no-wait
+  ticket: "OPS-1042: upgrade nodes n1 and n2"
+rationale: "Drain both nodes, then wait once at the end to save time."
+steps:
+  - {op: cordon, node: n1}
+  - {op: cordon, node: n2}
+  - {op: drain, node: n1}
+  - {op: drain, node: n2}
+  - {op: wait, deployments: [shop/checkout, shop/cart], timeoutSeconds: 300}
+#@ plan
+$ planproof check --snapshot snapshot.json --plan plan-no-wait.yaml --policy policy.yaml --output packet
+CAUTION: DO NOT APPROVE THIS PLAN.
+During step 4, no `shop/cart` pods are ready. The disruption budget for `shop/cart` needs at least 1.
+During step 4, only 1 `shop/checkout` pod is ready. The disruption budget for `shop/checkout` needs at least 2.
+During step 4, `shop/cart` has no ready pods. Each deployment must keep at least 1 ready pod.
+#@ verdict
+
+4. NOT CHECKED
+   The kernel does not check that this goal is the correct goal for the request. You must check this.
+#@ notchecked

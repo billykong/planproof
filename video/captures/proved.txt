@@ -1,0 +1,10 @@
+#title planproof check · the plan that waits
+$ planproof check --snapshot snapshot.json --plan plan-proved.yaml --policy policy.yaml --output packet
+2. RESULT
+   PROVED. The kernel found no violation of the 13 rules in section 3.
+   A person must approve this plan before it runs.
+#@ proved
+   Reason: the plan moves pods off nodes.
+4. NOT CHECKED
+   The kernel does not check that this goal is the correct goal for the request. You must check this.
+#@ notchecked
