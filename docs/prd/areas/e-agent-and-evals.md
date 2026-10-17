@@ -2,7 +2,7 @@
 
 **Goal:** show the kernel working with a real model, and measure what it adds: against no checker, against the `safe-ops-agent-k8s` policy gate, and for human reviewers. Covers goal G6.
 
-Status: **In progress** (phase 3).
+Status: **Phase 3 done** (2026-10-17); **phase 4 in progress**.
 
 ## Design (2026-10-16)
 
@@ -23,6 +23,38 @@ Three runs each for Claude Opus 5.5 and Claude Sonnet 5.5 (effort high), one for
 - **A systematic wrong reason, traced to the prompt, and fixed:** with prompt v1, all 6 Claude refusals of `three-cordoned` added that draining n3 isn't allowed because it would move a pod of the protected `payments`. False: both models proved exactly that drain (`drain-n3`) in the same runs. Prompt v1 said the kernel requires that "the plan names only managed, unprotected objects", which the models read as "never touch a protected deployment". Prompt v2 (`agent.PromptVersion`) says what rule `protected` forbids (scale, set-image, rollout-restart, the goal) and allows (a drain may move its pods, a wait may name it). With v2, no refusal makes that claim; verdicts unchanged (Opus and Sonnet 39/39 again, Opus cheaper at $0.68).
 - **Claude Haiku 5.5 (prompt v2, three runs): 24/27 solvable, 12/12 infeasible, $0.04.** All three misses are `checkout-image`, whose ticket names an image by a 64-character digest: twice Haiku wrote the digest with 65 characters in both goal and steps, a consistent plan the kernel **proved, with the wrong goal** (it rolls out an image the ticket didn't name; the grader caught it, as a person reading the packet's GOAL would have to); once the goal had 64 and the steps 65, and `frame` refuted it three times until Haiku gave up.
 - **A kernel gap that finding shows:** with `requireImageDigest`, rule `limits` only checks that an image contains `@sha256:`, not that a 64-character hex digest follows. A strict check would have refuted both of Haiku's wrong-goal plans: an image reference that isn't a valid digest can't be pinned. **Fixed in kernel 0.2.0** (2026-10-17): `limits` now requires `@sha256:` and exactly 64 lowercase hex characters (spec 04; `TestRules` both ways; Haiku's plan is now seeded plan `digest-one-character-too-long`). Re-run on kernel 0.2.0 (three runs): 25/27 solvable, 12/12 infeasible, **0 proved with the wrong goal**; both remaining `checkout-image` misses are refusals of the malformed digest (once out of submissions, once giving up). It repaired a plan after a kernel reply in 7 of 39 runs; $0.04.
+
+## Phase 4 design (2026-10-17)
+
+Phase 4 measures what the kernel adds, and places the project in the public work it builds on. Each measurement reports whatever it finds, including results that favour the other checker.
+
+### Head-to-head with the safe-ops gate (E-20)
+
+- **The other checker, unchanged.** A harness in its own Go module, `measure/safeops/`, imports the `safe-ops-agent-k8s` approval controller's own code (`Plan`, `BlastRadius`, `Findings`, `RollbackCheck`, `Diff`, `PolicyInput`) and compiles its `gate.rego` with its `gate` package. A `replace` directive points at a sibling checkout (`../safe-ops-agent-k8s`), so planproof's own module and the kernel gain no dependencies (K budgets unchanged).
+- **The dry run is simulated.** safe-ops asks the API server for a server-side dry run of each patch. Offline, the harness applies the merge patch locally and reports the dry run as accepted. So admission policies, which the real dry run would see and planproof doesn't model, are out of this comparison; the write-up says so.
+- **Policy, translated in safe-ops' favour.** planproof's policy becomes safe-ops labels: a managed namespace gets `safe-ops.io/agent-managed=true`, a protected deployment `safe-ops.io/protected=true`, a critical one `safe-ops.io/tier=critical`, and `limits.maxReplicas` the namespace's `safe-ops.io/max-replicas`. The disruption budgets come from the snapshot.
+- **Plans, translated step by step.** A ChangeRequest holds one action, `ScaleDeployment` or `RestartDeployment`. Each `scale` and `rollout-restart` step becomes one ChangeRequest, judged against the state after the earlier ones have finished (one change at a time, as safe-ops runs). `wait` steps are dropped: safe-ops has no sequencing. `cordon`, `uncordon`, `drain` and `set-image` have no ChangeRequest form: a plan with any of them is **not expressible** in safe-ops. That is reported as its own outcome, not as a catch or a miss.
+- **Outcomes per plan.** safe-ops: Deny (any ChangeRequest denied), Escalate (a human must approve), Allow, or Not expressible. planproof: the kernel's verdict, and whether the goal check (the person reading GOAL) is needed.
+- **Both directions.** (1) planproof's 25 seeded bad plans and the 9 reference plans of the solvable tasks (good plans, to count false alarms) through safe-ops. (2) safe-ops' own seeded corpus (`projects/04-observability/evals/seeded/proposals.yaml`, 8 proposals, 3 of them good) through planproof, on a snapshot of safe-ops' demo namespace written from its manifests. A ChangeRequest's free-text intent has no place in a plan; where the intent and the action disagree, two plans are checked: one whose goal states the action (honest) and one whose goal states the intent (the proposer's claim).
+- **Output.** `results/safeops-comparison.md`, generated by the harness (E-23).
+
+### Reviewer study (E-22)
+
+- **Items.** 12 plans: 6 good, 6 bad, drawn from the reference and seeded plans, so the answers are known. Bad ones include rule violations the kernel refutes and goal-versus-ticket mismatches it proves.
+- **Two formats.** Each item is shown either as the raw plan YAML with the ticket and snapshot summary, or as the review packet with the ticket. Each reviewer sees every item once, half in each format, assigned at random and balanced across reviewers.
+- **The kit is an artifact page** with a shared database: it shows the items, records each decision (approve or reject), the time taken and an optional reason, and reveals the answers only at the end. A script exports the rows into `results/reviewer-study.md`: catch rate, false alarms and time to decide, per format.
+- **People are needed.** Reviewers are recruited by the project owner; the study's status stays Planned until it has run, and it is reported whatever the result.
+- **An AI proxy, labelled as one (E-24).** Before people take part, the same items go to Claude models as reviewers, in both formats, through the API. This tests the kit and gives a first signal. It is not a substitute for people and is never reported as one.
+
+### Results generated, not typed (E-23)
+
+- Every table in `results/` comes from a command: `planproof-eval summary` (agent runs), `planproof-eval seeded`, the safe-ops harness, the reviewer-study export. `make results` regenerates the ones that don't need a network or a cluster, and CI fails if a committed table differs from what the command writes.
+- Prose write-ups (`results/agent-trials.md`) may quote numbers, but each table in them sits between generated markers and is filled by the command.
+
+### Prior art and the blog post (E-25, E-26)
+
+- **We build on public work.** `docs/prior-art.md` maps each planproof idea to the public work it comes from: the reference monitor and economy of mechanism, the LCF kernel and the de Bruijn criterion, proof-carrying code and certifying algorithms, Hoare logic and the frame problem, abstract interpretation, translation validation, plan validators for AI planning (VAL), LLM-Modulo frameworks, AWS's automated reasoning (Zelkova, TLA+, Cedar), Kubernetes' own disruption budgets and dry runs, policy-as-code (OPA), plain-language standards (ASD-STE100), and research on automation bias. For each: what we took, what we changed, and where we fall short of it.
+- **The blog post** (on billykong.github.io) presents planproof as our try at applying that known work to AI-written ops plans, not as a new idea. Every borrowed idea links to a public source; every number links to a generated result.
 
 ## User stories
 
@@ -52,7 +84,10 @@ Three runs each for Claude Opus 5.5 and Claude Sonnet 5.5 (effort high), one for
 
 | ID | Requirement | Priority | Status |
 | --- | --- | --- | --- |
-| E-20 | The seeded bad plans, translated to `ChangeRequest`s, run through the `safe-ops-agent-k8s` OPA gate; report what each checker catches. | Must | Planned |
+| E-20 | The seeded bad plans, translated to `ChangeRequest`s, run through the `safe-ops-agent-k8s` OPA gate; report what each checker catches. Also the reverse: safe-ops' seeded proposals through planproof; and good plans through both, to count false alarms. | Must | Planned |
 | E-21 | Seeded unsafe plans accepted by the kernel: 0. Any acceptance is a kernel or model bug, recorded as a gap. | Must | **Done** for the seeded set: 0 of 20 rule, trigger and frame plans accepted (`TestSeeded`). The 5 goal-versus-ticket plans are proved by design: the kernel checks a plan against its own goal |
 | E-22 | Reviewer study: a mix of good and seeded bad plans, shown to reviewers either as raw plan YAML or as the packet. Report catch rate, false alarms and time to decide, whatever the result. | Should | Planned |
 | E-23 | Results are generated by scripts into `results/`, never typed by hand. | Must | Planned |
+| E-24 | An AI-proxy run of the reviewer study: Claude models review the same items in both formats. Reported as a proxy, never as a human result. | Could | Planned |
+| E-25 | `docs/prior-art.md`: each planproof idea mapped to the public work it builds on, with a link, what we took, what we changed and where we fall short. | Must | Planned |
+| E-26 | A blog post on billykong.github.io: the project as an application of known public ideas, each idea linked to its source and each number to a generated result. | Must | Planned |

@@ -48,9 +48,11 @@ flowchart LR
 3. **Done.** Seeded bad plans, including intent-versus-effect mismatches ([evals/seeded.yaml](../../evals/seeded.yaml), [results/seeded.md](../../results/seeded.md)).
 
 ### Phase 4
-1. Head-to-head with the `safe-ops-agent-k8s` OPA gate on the same seeded plans.
-2. Reviewer study.
-3. Blog post.
+Design in [areas/e-agent-and-evals.md](areas/e-agent-and-evals.md#phase-4-design-2026-10-17).
+1. Head-to-head with the `safe-ops-agent-k8s` OPA gate, both directions, with good plans for false alarms (E-20).
+2. Results generated, with a CI check (E-23).
+3. Reviewer study: the kit, an AI-proxy run (E-24), then people (E-22).
+4. Prior art (E-25) and the blog post (E-26).
 
 ## Open questions
 

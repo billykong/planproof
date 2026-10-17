@@ -27,7 +27,7 @@ This folder is the product requirements document (PRD): what we're building, why
 | R Review packet | **Phase 1 milestone 4 done**: renderer, word list, template lint, golden packets. Open: R-09, R-11 |
 | T CLI | **Done**: `check`, `render`, `hash`; strict YAML conversion. Open: an automated check for T-07 |
 | C Cluster | **Done for phase 2**: fetcher, executor, model fidelity (the predicted lowest matched the real cluster exactly in every case), translation check. Open: C-22 (2 of 8 triggers); gaps in [known-gaps.md](../known-gaps.md) |
-| E Agent and evals | **Phase 3 done**: Claude Opus 5.5 and Sonnet 5.5 39/39 over three runs, twice; Claude Haiku 5.5 36/39 with 2 plans proved with the wrong goal (a mistyped image digest), then 37/39 with none once kernel 0.2.0 checked the digest's form; Qwen2.5-1.5B 0/9 solvable (not a fair comparison); 25 seeded plans, none missed. Open: phase 4 (E-20, E-22) |
+| E Agent and evals | **Phase 3 done**: Claude Opus 5.5 and Sonnet 5.5 39/39 over three runs, twice; Claude Haiku 5.5 36/39 with 2 plans proved with the wrong goal (a mistyped image digest), then 37/39 with none once kernel 0.2.0 checked the digest's form; Qwen2.5-1.5B 0/9 solvable (not a fair comparison); 25 seeded plans, none missed. Phase 4 in progress: E-20, E-22 to E-26 |
 
 ## Conventions
 
