@@ -18,7 +18,7 @@ flowchart LR
 | 1 | Kernel, renderer, CLI (K, R, T areas). **Done** 2026-10-16 | The worked example passes as golden tests; size, dependency and coverage budgets enforced in CI; every rule has an accept and a reject test |
 | 2 | Fetcher, executor, model-fidelity tests on kind (C area). **Done** 2026-10-16 | Each operation's predicted state matches kind; the executor stops on drift and on a wait timeout; translation check passes |
 | 3 | Agent loop and evals (E area). **Done** 2026-10-17 | A model writes plans for the seeded tasks and repairs them from Refuted facts; Proved / Refuted / Unknown rates reported |
-| 4 | Measurement | Seeded bad plans through both planproof and the `safe-ops` gate; AI reviewers, packet vs raw plan (the study with people dropped); results published |
+| 4 | Measurement. **Done** 2026-10-17 | Seeded bad plans through both planproof and the `safe-ops` gate; AI reviewers, packet vs raw plan (the study with people dropped); results published |
 | 5 | Stretch: Lean 4 model of the semantics, a soundness proof for the checker, and differential tests between the Go kernel and the Lean model | Proof checks in CI; differential tests run on every PR |
 
 ## Milestones
