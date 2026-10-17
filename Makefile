@@ -97,9 +97,13 @@ safeops-compare:
 RUNS := $(addprefix results/agent-,claude-opus-5-5-high.jsonl claude-opus-5-5-high-prompt-v2.jsonl \
   claude-sonnet-5-5-high.jsonl claude-sonnet-5-5-high-prompt-v2.jsonl claude-haiku-5-5-high-prompt-v2.jsonl \
   claude-haiku-5-5-high-kernel-0.2.0.jsonl qwen2.5-1.5b-instruct.jsonl)
+REVIEWS := $(addprefix results/review-proxy-,claude-haiku-5-5.jsonl claude-sonnet-5-5.jsonl claude-opus-5-5.jsonl)
 results:
 	go run ./cmd/planproof-eval summary $(RUNS) > results/agent-summary.md
 	go run ./cmd/planproof-eval seeded > results/seeded.md
 	python3 scripts/build-trials-page.py
+	go run ./cmd/planproof-eval study-items > results/study/items.json
+	python3 scripts/build-study-page.py
+	go run ./cmd/planproof-eval review-summary $(REVIEWS) > results/review-proxy.md
 results-check: results
 	@git diff --exit-code -- results/ || { echo "results/ differs from what the commands write: run make results and commit"; exit 1; }

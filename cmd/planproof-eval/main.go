@@ -61,6 +61,12 @@ func main() {
 		} else {
 			responses(os.Stdout, recs)
 		}
+	case "study-items":
+		studyItems(os.Stdout)
+	case "review-proxy":
+		reviewProxy(os.Args[2:])
+	case "review-summary":
+		reviewSummary(os.Stdout, os.Args[2:])
 	case "summary":
 		var recs []Record
 		for _, p := range os.Args[2:] {
@@ -73,7 +79,7 @@ func main() {
 }
 
 func usage() {
-	fmt.Fprintln(os.Stderr, "usage: planproof-eval run --model local|claude|scripted [...] | planproof-eval summary FILE...")
+	fmt.Fprintln(os.Stderr, "usage: planproof-eval run --model local|claude|scripted [...] | summary FILE... | seeded | responses [--json] FILE... | study-items | review-proxy [...] | review-summary FILE...")
 	os.Exit(2)
 }
 

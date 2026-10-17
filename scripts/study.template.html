@@ -1,0 +1,237 @@
+<title>Plan Review Study</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{--bg:#f6f7f4;--panel:#ffffff;--ink:#1d211c;--muted:#5d665a;--line:#d9ddd3;--accent:#2f6b4f;--accent-ink:#ffffff;--bad:#a23b2a;--bad-bg:#f8e7e3;--ok-bg:#e4f0e8;--code-bg:#f0f2ec;--focus:#2f6b4f}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141713;--panel:#1c201b;--ink:#e3e7df;--muted:#9aa595;--line:#323830;--accent:#7cc39c;--accent-ink:#0f1a13;--bad:#f08f7d;--bad-bg:#3a201b;--ok-bg:#1d3326;--code-bg:#11140f;--focus:#7cc39c;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#141713;--panel:#1c201b;--ink:#e3e7df;--muted:#9aa595;--line:#323830;--accent:#7cc39c;--accent-ink:#0f1a13;--bad:#f08f7d;--bad-bg:#3a201b;--ok-bg:#1d3326;--code-bg:#11140f;--focus:#7cc39c;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.55 "IBM Plex Sans",system-ui,sans-serif}
+.wrap{max-width:860px;margin:0 auto;padding-block:28px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:20px}
+h1,h2{text-wrap:balance;line-height:1.2;margin:0}
+h1{font-size:1.6rem;font-weight:600}
+h2{font-size:1.15rem;font-weight:600}
+p{margin:0;max-width:66ch}
+.label{font:600 .72rem/1 "IBM Plex Mono",monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:20px;display:grid;gap:14px;min-width:0}
+.stack{display:grid;gap:10px}
+ul{margin:0;padding-left:1.2em;display:grid;gap:6px;max-width:66ch}
+.ticket{font-size:1.05rem;font-weight:500;border-left:3px solid var(--accent);padding-left:12px}
+pre{margin:0;background:var(--code-bg);border:1px solid var(--line);border-radius:8px;padding:14px;font:13px/1.5 "IBM Plex Mono",ui-monospace,monospace;white-space:pre;overflow:auto;max-height:62vh}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.spread{justify-content:space-between}
+button{font:inherit;font-weight:600;border-radius:8px;padding:10px 18px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+button:focus-visible,textarea:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button.reject{color:var(--bad);border-color:var(--bad)}
+button:disabled{opacity:.5;cursor:default}
+textarea{font:inherit;width:100%;min-height:64px;border:1px solid var(--line);border-radius:8px;padding:10px;background:var(--panel);color:var(--ink)}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--accent);width:0}
+.note{font-size:.9rem;color:var(--muted)}
+.warn{background:var(--bad-bg);color:var(--ink);border-radius:8px;padding:10px 12px;font-size:.9rem}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--muted)}
+.pill{display:inline-block;font:600 .75rem/1 "IBM Plex Mono",monospace;padding:4px 7px;border-radius:5px}
+.pill.ok{background:var(--ok-bg)}
+.pill.bad{background:var(--bad-bg)}
+.mono{font-family:"IBM Plex Mono",monospace}
+</style>
+
+<div class="wrap">
+  <header class="stack">
+    <span class="label">planproof · reviewer study</span>
+    <h1>Would you approve this change?</h1>
+  </header>
+
+  <section class="panel" id="intro">
+    <h2>What you will do</h2>
+    <p id="instructions"></p>
+    <ul>
+      <li>You see 12 change plans, one at a time, each with the ticket it was written for. Some are good and some are not.</li>
+      <li>Each plan is shown in one of two formats, chosen at random: the raw plan with the cluster's facts, or a checked report. Read whatever helps you decide.</li>
+      <li>Choose <b>Approve</b> or <b>Reject</b>. A one-line reason is optional but helps. There is no going back.</li>
+      <li>It takes about 15 to 25 minutes. Answers are revealed at the end.</li>
+    </ul>
+    <p class="note">The page saves your decisions, the time each took and your reasons, under an anonymous id, for the project owner to read. No name or email is stored. You can stop and come back later on the same account.</p>
+    <div id="storage-note" class="warn" hidden></div>
+    <div class="row"><button class="primary" id="start" type="button">Start</button></div>
+  </section>
+
+  <section class="panel" id="review" hidden>
+    <div class="row spread">
+      <span class="label" id="progress"></span>
+      <span class="label" id="format"></span>
+    </div>
+    <div class="bar" aria-hidden="true"><i id="bar"></i></div>
+    <div class="stack">
+      <span class="label">Ticket</span>
+      <p class="ticket" id="ticket"></p>
+    </div>
+    <pre id="body" tabindex="0" aria-label="The plan to review"></pre>
+    <label class="stack"><span class="label">Reason (optional)</span><textarea id="reason" maxlength="500"></textarea></label>
+    <div class="row">
+      <button class="primary" id="approve" type="button">Approve</button>
+      <button class="reject" id="reject" type="button">Reject</button>
+      <span class="note" id="saving"></span>
+    </div>
+  </section>
+
+  <section class="panel" id="done" hidden>
+    <h2>Thank you. Here are the answers.</h2>
+    <p id="score"></p>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Plan</th><th>Format</th><th>You</th><th>Answer</th><th>Why</th></tr></thead>
+      <tbody id="answers"></tbody>
+    </table></div>
+    <div id="copy-box" class="stack" hidden>
+      <p class="note">Your answers couldn't be saved here. Please copy them and send them to the person who asked you to take part.</p>
+      <pre id="copy-text"></pre>
+      <div class="row"><button type="button" id="copy">Copy answers</button><span class="note" id="copied"></span></div>
+    </div>
+  </section>
+</div>
+
+<script id="study-data" type="application/json">{{ITEMS}}</script>
+<script>
+(() => {
+  const DATA = JSON.parse(document.getElementById("study-data").textContent);
+  const ITEMS = DATA.items;
+  const $ = (id) => document.getElementById(id);
+  $("instructions").textContent = DATA.instructions;
+
+  // Session state: the assignment (order and format per item) and answers.
+  let state = null, shownAt = 0, db = null, uid = null, canSave = false;
+
+  function shuffle(a) {
+    for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+    return a;
+  }
+  // Each reviewer sees every item once, half raw and half packet; good and
+  // bad items are each split as evenly as possible between the formats.
+  function assign() {
+    const formats = {};
+    for (const group of ["approve", "reject"]) {
+      const ids = shuffle(ITEMS.filter((it) => it.answer === group).map((it) => it.id));
+      ids.forEach((id, i) => { formats[id] = i % 2 === 0 ? "raw" : "packet"; });
+    }
+    return { order: shuffle(ITEMS.map((it) => it.id)), formats, answers: {}, startedAt: new Date().toISOString() };
+  }
+
+  function current() { return state.order.find((id) => !state.answers[id]); }
+
+  function show() {
+    const id = current();
+    if (!id) return finish();
+    const it = ITEMS.find((x) => x.id === id);
+    const fmt = state.formats[id];
+    const n = Object.keys(state.answers).length;
+    $("progress").textContent = `Plan ${n + 1} of ${ITEMS.length}`;
+    $("format").textContent = fmt === "raw" ? "Format: raw plan" : "Format: checked report";
+    $("bar").style.width = `${(100 * n) / ITEMS.length}%`;
+    $("ticket").textContent = it.ticket;
+    $("body").textContent = fmt === "raw" ? it.raw : it.packet;
+    $("body").scrollTop = 0;
+    $("reason").value = "";
+    $("saving").textContent = "";
+    for (const b of ["approve", "reject"]) $(b).disabled = false;
+    $("intro").hidden = true; $("review").hidden = false;
+    window.scrollTo(0, 0);
+    shownAt = performance.now();
+  }
+
+  async function save() {
+    if (!canSave) return false;
+    try {
+      await db.doc(`responses/${uid}`).set({ ...state, version: 1 });
+      return true;
+    } catch (e) {
+      canSave = false;
+      return false;
+    }
+  }
+
+  async function decide(decision) {
+    const id = current();
+    for (const b of ["approve", "reject"]) $(b).disabled = true;
+    state.answers[id] = {
+      format: state.formats[id], decision, reason: $("reason").value.trim().slice(0, 500),
+      ms: Math.round(performance.now() - shownAt),
+    };
+    if (!current()) state.finishedAt = new Date().toISOString();
+    $("saving").textContent = canSave ? "Saving…" : "";
+    await save();
+    show();
+  }
+
+  function finish() {
+    $("intro").hidden = true; $("review").hidden = true; $("done").hidden = false;
+    const tbody = $("answers"); tbody.textContent = "";
+    const tally = { raw: [0, 0], packet: [0, 0] };
+    for (const id of state.order) {
+      const it = ITEMS.find((x) => x.id === id), a = state.answers[id];
+      const right = a.decision === it.answer;
+      tally[a.format][0] += right ? 1 : 0; tally[a.format][1] += 1;
+      const tr = document.createElement("tr");
+      const cells = [id, a.format === "raw" ? "raw plan" : "checked report", a.decision, it.answer, it.why];
+      cells.forEach((text, i) => {
+        const td = document.createElement("td");
+        if (i === 2) { const s = document.createElement("span"); s.className = "pill " + (right ? "ok" : "bad"); s.textContent = text; td.append(s); }
+        else { td.textContent = text; if (i === 0) td.className = "mono"; }
+        tr.append(td);
+      });
+      tbody.append(tr);
+    }
+    $("score").textContent = `You matched the answer on ${tally.raw[0]} of ${tally.raw[1]} raw plans and ${tally.packet[0]} of ${tally.packet[1]} checked reports.`;
+    if (!canSave) {
+      $("copy-box").hidden = false;
+      $("copy-text").textContent = JSON.stringify(state);
+    }
+  }
+
+  $("start").addEventListener("click", async () => {
+    if (!state) state = assign();
+    if (canSave && !(await save())) showStorageNote();
+    show();
+  });
+  $("approve").addEventListener("click", () => decide("approve"));
+  $("reject").addEventListener("click", () => decide("reject"));
+  $("copy").addEventListener("click", async () => {
+    const text = $("copy-text").textContent;
+    try { await navigator.clipboard.writeText(text); $("copied").textContent = "Copied."; }
+    catch { const r = document.createRange(); r.selectNodeContents($("copy-text")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); $("copied").textContent = "Selected: press Ctrl+C or Cmd+C."; }
+  });
+
+  function showStorageNote() {
+    const n = $("storage-note");
+    n.hidden = false;
+    n.textContent = "This view can't save answers. You can still take part: at the end, copy your answers and send them back.";
+  }
+
+  // Storage lights up when the viewer can write; the study works without it.
+  (async () => {
+    try {
+      const user = window.claude ? await window.claude.use("user") : null;
+      db = window.claude ? await window.claude.use("db") : null;
+      uid = user ? await user.id() : null;
+      const may = user ? await user.can("data.write") : null;
+      canSave = !!(db && uid && may !== false);
+      if (!canSave) { showStorageNote(); return; }
+      const snap = await db.doc(`responses/${uid}`).get();
+      if (snap.exists) {
+        const saved = snap.data();
+        if (saved && saved.order && saved.formats && saved.answers) {
+          state = JSON.parse(JSON.stringify(saved));
+          if (!current()) finish();
+          else $("start").textContent = "Continue";
+        }
+      }
+    } catch (e) {
+      canSave = false; showStorageNote();
+    }
+  })();
+})();
+</script>

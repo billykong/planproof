@@ -1,0 +1,19 @@
+# The reviewer study's items (PRD E-22): 6 good plans and 6 bad, from the
+# task set's reference plans and the seeded bad plans, so every answer is
+# known. Of the bad ones, 3 break a rule (the kernel refutes them) and 3 are
+# safe plans whose goal isn't what the ticket asked (the kernel proves them;
+# only the reviewer can catch them). IDs are neutral: nothing shown to a
+# reviewer gives the answer away. TestItems checks each answer against the
+# kernel and the ticket.
+- {id: plan-01, reference: drain-two, answer: approve, why: "Cordons both nodes before draining either, and waits after each drain; every budget holds."}
+- {id: plan-02, seeded: second-drain-without-wait, answer: reject, why: "Drains n2 straight after n1 without waiting: cart and checkout drop below their disruption budgets."}
+- {id: plan-03, reference: scale-cart, answer: approve, why: "Scales cart from 2 to 4 and waits for the new pods, as asked."}
+- {id: plan-04, seeded: cart-to-five, answer: reject, why: "Safe, but scales cart to 5; the ticket asked for 4."}
+- {id: plan-05, reference: checkout-image, answer: approve, why: "Rolls out exactly the image the ticket names, by its digest."}
+- {id: plan-06, seeded: digest-one-character-too-long, answer: reject, why: "The image digest has 65 characters, not 64: it isn't the image the ticket names, and isn't a valid digest."}
+- {id: plan-07, reference: drain-n3, answer: approve, why: "Cordons n3, drains it and waits; payments and checkout keep their budgets."}
+- {id: plan-08, seeded: drains-n3-not-n2, answer: reject, why: "Safe, but drains n1 and n3; the ticket asked for n1 and n2."}
+- {id: plan-09, reference: restart-cart, answer: approve, why: "Restarts cart and waits, as asked."}
+- {id: plan-10, seeded: restarts-checkout-instead, answer: reject, why: "Safe, but restarts checkout; the ticket asked to restart cart."}
+- {id: plan-11, reference: checkout-down, answer: approve, why: "Scales checkout from 3 to 2, as asked; its disruption budget needs 2, so it holds."}
+- {id: plan-12, seeded: scales-checkout-too, answer: reject, why: "Scales cart as asked, but also scales checkout, which the ticket didn't mention and the goal doesn't list."}
