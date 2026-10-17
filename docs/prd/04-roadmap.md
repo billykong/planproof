@@ -17,7 +17,7 @@ flowchart LR
 | 0 | This PRD, the [spec](../spec/README.md), the worked example | The example's expected verdicts and packets are written by hand and agree with the spec |
 | 1 | Kernel, renderer, CLI (K, R, T areas). **Done** 2026-10-16 | The worked example passes as golden tests; size, dependency and coverage budgets enforced in CI; every rule has an accept and a reject test |
 | 2 | Fetcher, executor, model-fidelity tests on kind (C area). **Done** 2026-10-16 | Each operation's predicted state matches kind; the executor stops on drift and on a wait timeout; translation check passes |
-| 3 | Agent loop and evals (E area) | A model writes plans for the seeded tasks and repairs them from Refuted facts; Proved / Refuted / Unknown rates reported |
+| 3 | Agent loop and evals (E area). **Done** 2026-10-17 | A model writes plans for the seeded tasks and repairs them from Refuted facts; Proved / Refuted / Unknown rates reported |
 | 4 | Measurement | Seeded bad plans through both planproof and the `safe-ops` gate; reviewer study, packet vs raw plan; results published |
 | 5 | Stretch: Lean 4 model of the semantics, a soundness proof for the checker, and differential tests between the Go kernel and the Lean model | Proof checks in CI; differential tests run on every PR |
 
@@ -44,7 +44,7 @@ flowchart LR
 ### Phase 3
 1. **Done.** Seeded task set ([evals/tasks.yaml](../../evals/tasks.yaml), 13 tasks, each proved solvable or not).
 
-2. **Done.** Agent loop (`agent/`, `cmd/planproof-eval`) with the scripted model, the local model and Claude Opus 5.5 ([results/agent-summary.md](../../results/agent-summary.md)).
+2. **Done.** Agent loop (`agent/`, `cmd/planproof-eval`) with the scripted model, the local model and Claude Opus, Sonnet and Haiku 5.5 ([results/agent-summary.md](../../results/agent-summary.md), write-up in [results/agent-trials.md](../../results/agent-trials.md)).
 3. **Done.** Seeded bad plans, including intent-versus-effect mismatches ([evals/seeded.yaml](../../evals/seeded.yaml), [results/seeded.md](../../results/seeded.md)).
 
 ### Phase 4
