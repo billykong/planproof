@@ -62,10 +62,11 @@ Phase 4 measures what the kernel adds, and places the project in the public work
 - Every table in `results/` comes from a command: `planproof-eval summary` (agent runs), `planproof-eval seeded`, the safe-ops harness, the reviewer-study export. `make results` regenerates the ones that don't need a network or a cluster, and CI fails if a committed table differs from what the command writes.
 - Prose write-ups (`results/agent-trials.md`) may quote numbers, but each table in them sits between generated markers and is filled by the command.
 
-### Prior art and the blog post (E-25, E-26)
+### Prior art, the blog post and the video (E-25 to E-27)
 
 - **We build on public work.** `docs/prior-art.md` maps each planproof idea to the public work it comes from: the reference monitor and economy of mechanism, the LCF kernel and the de Bruijn criterion, proof-carrying code and certifying algorithms, Hoare logic and the frame problem, abstract interpretation, translation validation, plan validators for AI planning (VAL), LLM-Modulo frameworks, AWS's automated reasoning (Zelkova, TLA+, Cedar), Kubernetes' own disruption budgets and dry runs, policy-as-code (OPA), plain-language standards (ASD-STE100), and research on automation bias. For each: what we took, what we changed, and where we fall short of it.
 - **The blog post** (on billykong.github.io) presents planproof as our try at applying that known work to AI-written ops plans, not as a new idea. Every borrowed idea links to a public source; every number links to a generated result.
+- **The video** says what the post says, narrated over slides generated from code, with real `planproof` output and no generated footage; it is labelled as AI-narrated. Shorts are cut from the same script and captures.
 
 ## User stories
 
@@ -102,3 +103,4 @@ Phase 4 measures what the kernel adds, and places the project in the public work
 | E-24 | An AI-proxy run of the reviewer study: Claude models review the same items in both formats. Reported as a proxy, never as a human result. | Could | **Done** (2026-10-17): [results/review-proxy.md](../../../results/review-proxy.md), 216 reviews; `TestItems` checks the answer key, `make results-check` the table |
 | E-25 | `docs/prior-art.md`: each planproof idea mapped to the public work it builds on, with a link, what we took, what we changed and where we fall short. | Must | **Done** (2026-10-17): [docs/prior-art.md](../../prior-art.md), 26 entries in 7 sections; every link checked by hand on 2026-10-17 (no automated link check) |
 | E-26 | A blog post on billykong.github.io: the project as an application of known public ideas, each idea linked to its source and each number to a generated result. | Must | **Done** (2026-10-17): published at [billykong.github.io/planproof/](https://billykong.github.io/planproof/); every link to this repository and to the sources checked on publication |
+| E-27 | A video of the blog post (about 10 minutes) and Shorts from it, built from code in `video/`: same claims as the post, real `planproof` output, AI narration disclosed. | Could | **Done** (2026-10-18): the video is at [youtu.be/7fQ-RVWXN7E](https://youtu.be/7fQ-RVWXN7E); Shorts not yet uploaded. Built by `video/build.sh`, a 10:47 video and three Shorts (49 to 56 s), each saying planproof is a demo, not a production system; not yet uploaded |

@@ -10,7 +10,7 @@
 module.exports = { scenes: [
   { id: 'title', visual: { type: 'title' }, beats: [
     { say: 'AI agents can now write the plans that change production systems. So who checks the plan?' },
-    { say: 'This video is about a small checker, with no AI in it, that checks every plan and explains the result in plain English. What it is, why you can trust it, and what the evidence says.' },
+    { say: 'This video is about a small checker, with no AI in it, that checks every plan and explains the result in plain English. It’s a demo of how such a check can work, not a production system. What it is, why you can trust it, and what the evidence says.' },
   ] },
 
   { id: 'problem', visual: { type: 'statement', label: 'THE PROBLEM', lines: [
@@ -159,15 +159,17 @@ module.exports = { scenes: [
   ] },
 
   { id: 'limits', visual: { type: 'statement', label: 'WHAT IT DOESN’T DO', lines: [
+    'It’s a demo, not a production system.',
     'Its model of Kubernetes is tested, not proved.',
     'A person still checks the goal.',
     'Seven operations on nodes and deployments.',
     'The evidence is small.',
   ] }, beats: [
-    { show: 1, say: 'What it doesn’t do. The checker is only as good as its model of Kubernetes. That model matched a real cluster in every test, but it’s tested, not mathematically proved. A proof in Lean is the planned next step.' },
-    { show: 2, say: 'A person still checks the goal, by design.' },
-    { show: 3, say: 'It covers seven operations: cordon, uncordon, drain, scale, change image, restart and wait.' },
-    { show: 4, say: 'And the evidence is small: thirteen tickets, twenty-five bad plans, and AI reviewers rather than people.' },
+    { show: 1, say: 'What it doesn’t do. First, planproof is a demo of how such a check can work. It isn’t a production system, and it isn’t meant to become one.' },
+    { show: 2, say: 'The checker is only as good as its model of Kubernetes. That model matched a real cluster in every test, but it’s tested, not mathematically proved. A proof in Lean is the planned next step.' },
+    { show: 3, say: 'A person still checks the goal, by design.' },
+    { show: 4, say: 'It covers seven operations: cordon, uncordon, drain, scale, change image, restart and wait.' },
+    { show: 5, say: 'And the evidence is small: thirteen tickets, twenty-five bad plans, and AI reviewers rather than people.' },
   ] },
 
   { id: 'prior', visual: { type: 'list', label: 'BUILT ON DECADES OF PUBLIC WORK', title: 'None of this is new', items: [
