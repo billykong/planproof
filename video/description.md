@@ -6,6 +6,8 @@ Times below come from `out/video/timings.json`; update them if the script change
 
 ## The video
 
+Published 2026-10-18: https://youtu.be/7fQ-RVWXN7E
+
 **File:** `out/video/video.mp4` (10:47, 1920x1080). **Thumbnail:** `out/video/thumbnail.png`.
 
 **Title:**
@@ -51,7 +53,7 @@ Each Short argues the idea, not the tool: don't trust the AI's plan, trust a che
 **Description (same for all three):**
 
     Don't trust the AI's plan. Trust a checker small enough to read: no AI in it, and short enough for a person to review.
-    Full video: [video link]
+    Full video: https://youtu.be/7fQ-RVWXN7E
     Write-up: https://billykong.github.io/planproof/
     The examples come from planproof, a small demo I built to try the idea, not a product: https://github.com/billykong/planproof
     Script drafted with AI and checked by me; AI voice; all checker output is from real runs.
