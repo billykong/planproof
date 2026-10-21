@@ -134,6 +134,12 @@ func (r *run) trigger(s Step) (string, string) {
 				return "placement-rules", "deployment/" + p.dep
 			}
 		}
+		// Mid rollout, the old pods may still be on their nodes (kernel 0.4.0).
+		for _, dep := range r.depNames {
+			if d := st.deps[dep]; d.rolling && slices.Contains(d.oldNodes, s.Node) {
+				return "overlapping-change", "deployment/" + dep
+			}
+		}
 	case "scale", "set-image", "rollout-restart":
 		if t := r.depTrigger(s.Deployment); t != "" {
 			return t, "deployment/" + s.Deployment
@@ -244,6 +250,10 @@ func (r *run) apply(ref StepRef, s Step) bool {
 				return true
 			}
 		}
+		d.oldNodes = nil
+		for _, p := range st.podsOf(s.Deployment) {
+			d.oldNodes = append(d.oldNodes, p.nodes...)
+		}
 		st.remove(st.podsOf(s.Deployment))
 		d.rolling = true
 		if s.Op == "set-image" {
@@ -255,7 +265,7 @@ func (r *run) apply(ref StepRef, s Step) bool {
 		return true
 	case "wait":
 		for _, dep := range s.Deployments {
-			st.deps[dep].rolling = false
+			st.deps[dep].rolling, st.deps[dep].oldNodes = false, nil
 			for _, p := range st.podsOf(dep) {
 				p.ready = true
 			}

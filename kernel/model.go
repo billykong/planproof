@@ -35,8 +35,9 @@ type mdep struct {
 	replicas   int64
 	images     map[string]string
 	restarted  bool
-	rolling    bool  // mid rolling update, until a wait names it
-	floor      int64 // available while rolling
+	rolling    bool     // mid rolling update, until a wait names it
+	oldNodes   []string // while rolling: where the old pods may still be (kernel 0.4.0)
+	floor      int64    // available while rolling
 	maxUnavail int64
 	maxSurge   int64
 	recreate   bool

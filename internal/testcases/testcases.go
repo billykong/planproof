@@ -146,6 +146,7 @@ steps:
   - {op: wait, deployments: [shop/cart], timeoutSeconds: 300}
 `
 	newDigest = "registry.example/cart@sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+	oldDigest = "registry.example/cart@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 )
 
 func scaleTo(n int) string { return fmt.Sprintf(scaleCart, n, n) }
@@ -246,6 +247,25 @@ steps:
   - {op: drain, node: n2}
   - {op: wait, deployments: [shop/cart, shop/checkout, shop/payments], timeoutSeconds: 300}
 `, Want: "Refuted", Rule: "never-zero"},
+	// Found while writing the Lean proof (kernel 0.4.0): mid rollout, the old pods
+	// may still be on their nodes. The rollout may take cart-b down first while
+	// cart-a, on the cordoned n1, is still running; draining n1 then evicts it
+	// before any new pod is ready. Until 0.3.0 the model dropped the old pods
+	// when the rollout started and proved this plan.
+	{Name: "unknown: draining a node that may still run a rolling deployment's old pods", Snap: func(m map[string]any) {
+		m["pdbs"] = m["pdbs"].([]any)[1:]
+		Named(m, "deployments", "cart")["strategy"] = map[string]any{"type": "RollingUpdate", "maxUnavailable": 1, "maxSurge": 1}
+	}, Plan: fmt.Sprintf(`
+goal:
+  - {node: n1, field: unschedulable, from: false, to: true}
+  - {node: n1, field: drained, from: false, to: true}
+  - {deployment: shop/cart, field: image, container: web, from: "%s", to: "%s"}
+steps:
+  - {op: cordon, node: n1}
+  - {op: set-image, deployment: shop/cart, container: web, image: "%s"}
+  - {op: drain, node: n1}
+  - {op: wait, deployments: [shop/cart, shop/checkout], timeoutSeconds: 300}
+`, oldDigest, newDigest, newDigest), Want: "Unknown", Trigger: "overlapping-change"},
 	{Name: "never-zero: Recreate strategy", Snap: func(m map[string]any) {
 		Named(m, "deployments", "cart")["strategy"].(map[string]any)["type"] = "Recreate"
 		m["pdbs"] = m["pdbs"].([]any)[1:]

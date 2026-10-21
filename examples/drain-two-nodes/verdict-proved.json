@@ -3,7 +3,7 @@
   "kind": "Verdict",
   "planName": "drain-two-nodes",
   "result": "Proved",
-  "kernelVersion": "0.3.0",
+  "kernelVersion": "0.4.0",
   "planSha256": "sha256:290f90c50533b06bd92aefbef0821babe8bfebe128ae8792a8e58819a75427d2",
   "snapshotSha256": "sha256:01d582c7f8de56cb623e5534474d6438c5ccaddd0f698cefadd4a691e777b625",
   "policySha256": "sha256:7df1f0660a8b766fb6d46f10e1817f21252038c9bc401ff24078c244a705bf07",

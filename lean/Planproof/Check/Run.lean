@@ -63,13 +63,17 @@ def trigger (st : State) (s : Step) : Option String :=
   let notReady := ["cordon", "uncordon", "drain"].contains s.op && !((st.node? s.node).map (·.ready) |>.getD false)
   if notReady then some "node-not-ready"
   else if s.op == "drain" then
-    st.pods.findSome? fun p =>
+    match st.pods.findSome? fun p =>
       if !p.mightBeOn s.node || p.owner == "DaemonSet" || p.owner == "None" then none
       else if p.localStorage then some "local-storage"
       else if p.dep == "" || (st.dep? p.dep).isNone then some "stateful-owner"
       else if let some t := depTrigger st p.dep then some t
       else if p.placement then some "placement-rules"
-      else none
+      else none with
+    | some t => some t
+    | none =>
+      -- Mid rollout, the old pods may still be on their nodes (kernel 0.4.0).
+      if st.deps.any fun d => d.rolling && d.oldNodes.contains s.node then some "overlapping-change" else none
   else if ["scale", "set-image", "rollout-restart"].contains s.op then
     match depTrigger st s.deployment with
     | some t => some t
@@ -137,15 +141,17 @@ def State.surgeFits (st : State) (d : String) (m : MDep) : State × Bool :=
     let (st, b) := st.place surge
     (st.remove surge, b.isNone)
 
-/-- What a set-image or rollout-restart does to the deployment itself. -/
-def rolloutUpdate (s : Step) (d : MDep) : MDep :=
-  if s.op == "set-image" then { d with rolling := true, images := setImage s.container s.image d.images }
-  else { d with rolling := true, restarted := true }
+/-- What a set-image or rollout-restart does to the deployment itself;
+`old` is where its old pods may still be. -/
+def rolloutUpdate (s : Step) (old : List String) (d : MDep) : MDep :=
+  if s.op == "set-image" then { d with rolling := true, oldNodes := old, images := setImage s.container s.image d.images }
+  else { d with rolling := true, oldNodes := old, restarted := true }
 
 /-- The rollout: the old pods go, new pending pods replace them. -/
 def State.rollout (st : State) (s : Step) (m : MDep) : State × Bool :=
+  let old := (st.podsOf s.deployment).flatMap (·.nodes)
   let st := st.remove ((st.podsOf s.deployment).map (·.name))
-  let st := st.updDep s.deployment (rolloutUpdate s)
+  let st := st.updDep s.deployment (rolloutUpdate s old)
   let (st, names) := st.newPods s.deployment m.replicas
   let (st, bad) := st.place names
   (st, bad.isNone)
@@ -196,7 +202,7 @@ def applyOp (st : State) (s : Step) : State × Bool :=
       if ok then st.rollout s m else (st, false)
   | "wait" =>
     (s.deployments.foldl (init := st) fun st d =>
-      let st := st.updDep d fun x => { x with rolling := false }
+      let st := st.updDep d fun x => { x with rolling := false, oldNodes := [] }
       st.updPods (fun p => p.dep == d && !p.gone) fun p => { p with ready := true }, true)
   | _ => (st, true)
 

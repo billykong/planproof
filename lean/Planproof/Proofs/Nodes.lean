@@ -51,7 +51,7 @@ theorem nodes_rollout (st : State) (s : Step) (m : MDep) : (st.rollout s m).1.no
 
 theorem nodes_wait (st : State) (ds : List String) :
     (ds.foldl (init := st) fun st d =>
-      let st := st.updDep d fun x => { x with rolling := false }
+      let st := st.updDep d fun x => { x with rolling := false, oldNodes := [] }
       st.updPods (fun p => p.dep == d && !p.gone) fun p => { p with ready := true }).nodes = st.nodes := by
   induction ds generalizing st with
   | nil => rfl

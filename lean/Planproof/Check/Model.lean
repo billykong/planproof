@@ -33,6 +33,8 @@ structure MDep where
   images : List (String × String)
   restarted : Bool
   rolling : Bool
+  /-- While rolling: where the old pods may still be (kernel 0.4.0). -/
+  oldNodes : List String
   floor : Int
   maxUnavail : Int
   maxSurge : Int
@@ -104,7 +106,7 @@ def build (s : Snapshot) : State :=
     { name := n.name, ready := n.ready, unsched := n.unsched, taints := n.taints, drained := false, alloc := n.alloc : MNode }
   let deps := s.deployments.map fun d =>
     { name := d.ns ++ "/" ++ d.name, replicas := d.replicas, images := d.containers, restarted := false,
-      rolling := false, floor := 0, maxUnavail := d.maxUnavail, maxSurge := d.maxSurge, recreate := d.recreate,
+      rolling := false, oldNodes := [], floor := 0, maxUnavail := d.maxUnavail, maxSurge := d.maxSurge, recreate := d.recreate,
       req := d.req, placement := d.placement, hpa := d.hpa,
       unsettled := decide (d.ready < d.replicas) || decide (d.updated < d.replicas),
       pdbs := 0, unresolved := false, made := 0 : MDep }

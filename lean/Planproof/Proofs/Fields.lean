@@ -231,13 +231,13 @@ theorem State.field_updDep_replicas (st : State) (d : String) (n : Int) :
     | some x => by_cases hb : x.name = d <;> simp [hb]
   | _ => simp [State.field, setField, State.updDep, State.node?]
 
-theorem State.field_updDep_restart (st : State) (d : String) :
-    (st.updDep d fun x => { x with rolling := true, restarted := true }).field = setField st.field (.restarted d) (.bool true) := by
+theorem State.field_updDep_restart (st : State) (d : String) (old : List String) :
+    (st.updDep d fun x => { x with rolling := true, oldNodes := old, restarted := true }).field = setField st.field (.restarted d) (.bool true) := by
   funext k
   cases k with
   | restarted e =>
     simp only [State.field, setField]
-    rw [State.dep?_updDep st d e (fun x => { x with rolling := true, restarted := true }) (fun _ => rfl)]
+    rw [State.dep?_updDep st d e (fun x => { x with rolling := true, oldNodes := old, restarted := true }) (fun _ => rfl)]
     by_cases h : e = d
     · subst h
       cases hm : st.dep? e with
@@ -248,13 +248,13 @@ theorem State.field_updDep_restart (st : State) (d : String) :
       | some x => simp [h, State.name_of_dep? hm]
   | replicas e =>
     simp only [State.field, setField]
-    rw [State.dep?_updDep st d e (fun x => { x with rolling := true, restarted := true }) (fun _ => rfl)]
+    rw [State.dep?_updDep st d e (fun x => { x with rolling := true, oldNodes := old, restarted := true }) (fun _ => rfl)]
     cases st.dep? e with
     | none => simp
     | some x => by_cases hb : x.name = d <;> simp [hb]
   | image e c =>
     simp only [State.field, setField]
-    rw [State.dep?_updDep st d e (fun x => { x with rolling := true, restarted := true }) (fun _ => rfl)]
+    rw [State.dep?_updDep st d e (fun x => { x with rolling := true, oldNodes := old, restarted := true }) (fun _ => rfl)]
     cases st.dep? e with
     | none => simp
     | some x => by_cases hb : x.name = d <;> simp [hb]
@@ -277,14 +277,14 @@ theorem find?_setImage (c img c' : String) (l : List (String × String)) :
       have : (c' == c) = false := by simpa [← hx] using hc
       simp [this]
 
-theorem State.field_updDep_image (st : State) (d c img : String) :
-    (st.updDep d fun x => { x with rolling := true, images := setImage c img x.images }).field =
+theorem State.field_updDep_image (st : State) (d c img : String) (old : List String) :
+    (st.updDep d fun x => { x with rolling := true, oldNodes := old, images := setImage c img x.images }).field =
       setField st.field (.image d c) (.str img) := by
   funext k
   cases k with
   | image e c' =>
     simp only [State.field, setField]
-    rw [State.dep?_updDep st d e (fun x => { x with rolling := true, images := setImage c img x.images }) (fun _ => rfl)]
+    rw [State.dep?_updDep st d e (fun x => { x with rolling := true, oldNodes := old, images := setImage c img x.images }) (fun _ => rfl)]
     by_cases h : e = d
     · subst h
       cases hm : st.dep? e with
@@ -303,13 +303,13 @@ theorem State.field_updDep_image (st : State) (d c img : String) :
       | some x => have hx := State.name_of_dep? hm; simp [h, hx]
   | replicas e =>
     simp only [State.field, setField]
-    rw [State.dep?_updDep st d e (fun x => { x with rolling := true, images := setImage c img x.images }) (fun _ => rfl)]
+    rw [State.dep?_updDep st d e (fun x => { x with rolling := true, oldNodes := old, images := setImage c img x.images }) (fun _ => rfl)]
     cases st.dep? e with
     | none => simp
     | some x => by_cases hb : x.name = d <;> simp [hb]
   | restarted e =>
     simp only [State.field, setField]
-    rw [State.dep?_updDep st d e (fun x => { x with rolling := true, images := setImage c img x.images }) (fun _ => rfl)]
+    rw [State.dep?_updDep st d e (fun x => { x with rolling := true, oldNodes := old, images := setImage c img x.images }) (fun _ => rfl)]
     cases st.dep? e with
     | none => simp
     | some x => by_cases hb : x.name = d <;> simp [hb]
@@ -327,7 +327,7 @@ theorem State.field_updDep_floor (st : State) (d : String) (v : Int) :
 
 theorem State.field_wait (st : State) (ds : List String) :
     (ds.foldl (init := st) fun st d =>
-      let st := st.updDep d fun x => { x with rolling := false }
+      let st := st.updDep d fun x => { x with rolling := false, oldNodes := [] }
       st.updPods (fun p => p.dep == d && !p.gone) fun p => { p with ready := true }).field = st.field := by
   induction ds generalizing st with
   | nil => rfl
@@ -345,7 +345,7 @@ theorem State.field_surgeFits (st : State) (d : String) (m : MDep) : (st.surgeFi
     rw [State.field_remove, State.field_place, State.field_newPods]
 
 theorem State.field_rollout (st : State) (s : Step) (m : MDep) :
-    (st.rollout s m).1.field = (st.updDep s.deployment (rolloutUpdate s)).field := by
+    (st.rollout s m).1.field = (st.updDep s.deployment (rolloutUpdate s ((st.podsOf s.deployment).flatMap (·.nodes)))).field := by
   unfold State.rollout
   simp only
   rw [State.field_place, State.field_newPods]
@@ -395,7 +395,8 @@ theorem State.field_applyOp (st : State) (s : Step) (h : (applyOp st s).2 = true
       · simp at h
       · simp only [ite_true]
         rw [State.field_rollout]
-        have hr : rolloutUpdate s = fun d => { d with rolling := true, images := setImage s.container s.image d.images } := by
+        have hr : ∀ old, rolloutUpdate s old = fun d => { d with rolling := true, oldNodes := old, images := setImage s.container s.image d.images } := by
+          intro old
           funext d; simp [rolloutUpdate, h5]
         rw [hr, State.field_updDep_image, h2]
   by_cases h6 : s.op = "rollout-restart"
@@ -417,7 +418,8 @@ theorem State.field_applyOp (st : State) (s : Step) (h : (applyOp st s).2 = true
       · simp at h
       · simp only [ite_true]
         rw [State.field_rollout]
-        have hr : rolloutUpdate s = fun d => { d with rolling := true, restarted := true } := by
+        have hr : ∀ old, rolloutUpdate s old = fun d => { d with rolling := true, oldNodes := old, restarted := true } := by
+          intro old
           funext d; simp [rolloutUpdate, h6]
         rw [hr, State.field_updDep_restart, h2]
   by_cases h7 : s.op = "wait"
