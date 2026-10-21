@@ -1,2 +1,4 @@
 # Theorems whose axioms CI checks (L-02); one fully qualified name per line.
 Planproof.frame_sound
+Planproof.cordon_first_sound
+Planproof.limits_sound

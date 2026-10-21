@@ -76,8 +76,8 @@ Tests try examples; a proof covers every possible plan, snapshot and policy with
 | ID | Requirement | Priority | Status |
 | --- | --- | --- | --- |
 | L-30 | `frame`: Proved implies the final state's changed fields equal the goal exactly. | Must | **Done** (2026-10-21): `Planproof.frame_sound` in `lean/Planproof/Proofs/Frame.lean`: `(check snap plan pol).result = .proved → Spec.GoalExact snap plan`, with `GoalExact` in `Spec/Fields.lean` (every goal change's `from` is the snapshot's value and differs from `to`; after the steps, every field the goal names has the goal's value and every other field its snapshot value). No hypotheses; only Lean's standard axioms |
-| L-31 | `cordon-first`: Proved implies every drained node was unschedulable in the state before its drain. | Must | Planned |
-| L-32 | `limits` (each state): Proved implies every state's node counts are within the policy or no worse than the snapshot. | Must | Planned |
+| L-31 | `cordon-first`: Proved implies every drained node was unschedulable in the state before its drain. | Must | **Done** (2026-10-21): `Planproof.cordon_first_sound` (`Proofs/Nodes.lean`) → `Spec.CordonFirst`, over the plan's steps and its rollback; no hypotheses |
+| L-32 | `limits` (each state): Proved implies every state's node counts are within the policy or no worse than the snapshot. | Must | **Done** (2026-10-21): `Planproof.limits_sound` → `Spec.NodeLimits`, after every step of the plan and its rollback; one hypothesis, `Spec.NodesUnique` (node names are unique, which the Go kernel's validation requires) |
 | L-33 | `budget` and `never-zero`: Proved implies, for every state and every concrete placement it allows, the requirement holds or is no worse than in the snapshot. | Must | Planned |
 | L-34 | `capacity`: Proved implies the checker's placement witness fits every node at every state. | Must | Planned |
 | L-35 | One main theorem combining L-30 to L-34, whose statement and the definitions it depends on are listed in `lean/README.md` as the thing to review. | Must | Planned |

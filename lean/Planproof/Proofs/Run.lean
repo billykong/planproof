@@ -167,3 +167,51 @@ theorem execute_passed (c : Ctx) (h : (execute c).result = .proved) : Passed c :
     · simp at h
 
 end Planproof
+
+namespace Planproof
+
+theorem runOps_append (st : State) (a b : List Step) : runOps st (a ++ b) = runOps (runOps st a) b := by
+  simp [runOps, List.foldl_append]
+
+/-- In a Proved check, every step of the plan and then of its rollback
+passed, each from the state the steps before it leave. -/
+theorem passed_all {c : Ctx} (hp : Passed c) :
+    ∀ i (hi : i < (Spec.allSteps c.plan).length),
+      StepOK c (runOps c.st0 ((Spec.allSteps c.plan).take i)) (Spec.allSteps c.plan)[i] := by
+  obtain ⟨hrun, hok⟩ := doSteps_ok hp.steps
+  intro i hi
+  unfold Spec.allSteps at hi ⊢
+  by_cases hlt : i < c.plan.steps.length
+  · rw [List.take_append_of_le_length (Nat.le_of_lt hlt), List.getElem_append_left hlt]
+    exact hok i hlt
+  · have hge : c.plan.steps.length ≤ i := Nat.le_of_not_lt hlt
+    have hne : c.plan.rollback ≠ [] := by
+      intro he; simp [he] at hi; omega
+    obtain ⟨hrun2, hok2⟩ := doSteps_ok (hp.rollback hne)
+    rw [hrun] at hok2
+    have hj : i - c.plan.steps.length < c.plan.rollback.length := by simp at hi; omega
+    have := hok2 (i - c.plan.steps.length) hj
+    rw [List.getElem_append_right hge]
+    rw [List.take_append, List.take_of_length_le hge, runOps_append]
+    simpa using this
+
+/-- The fields after a prefix of the steps of a Proved check. -/
+theorem passed_field {c : Ctx} (hp : Passed c) (i : Nat) (hi : i ≤ (Spec.allSteps c.plan).length) :
+    (runOps c.st0 ((Spec.allSteps c.plan).take i)).field = ((Spec.allSteps c.plan).take i).foldl Spec.step c.st0.field := by
+  apply runOps_field
+  intro j hj
+  simp only [List.length_take] at hj
+  have hj' : j < (Spec.allSteps c.plan).length := by omega
+  have := (passed_all hp j hj').placed
+  rw [List.take_take, Nat.min_eq_left (by omega)]
+  simpa [List.getElem_take] using this
+
+end Planproof
+
+namespace Planproof
+
+@[simp] theorem Ctx.make_plan (snap : Snapshot) (plan : Plan) (pol : Policy) : (Ctx.make snap plan pol).plan = plan := rfl
+@[simp] theorem Ctx.make_policy (snap : Snapshot) (plan : Plan) (pol : Policy) : (Ctx.make snap plan pol).policy = pol := rfl
+@[simp] theorem Ctx.make_st0 (snap : Snapshot) (plan : Plan) (pol : Policy) : (Ctx.make snap plan pol).st0 = build snap := rfl
+
+end Planproof
