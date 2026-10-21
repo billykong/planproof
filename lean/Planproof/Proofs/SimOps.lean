@@ -128,7 +128,7 @@ theorem Sim.congr {s : Snapshot} {st st' : State} {w : World} (hs : Sim s st w) 
   rollIff := fun d => by rw [h.rolling]; exact hs.rollIff d
   roll := by
     intro d r hr
-    obtain ⟨m, hm, hfl, hold, hnew, hcount⟩ := hs.roll d r hr
+    obtain ⟨m, hm, hfl, hold, hnew, hcount, hmax⟩ := hs.roll d r hr
     have hd := dep?_strip h.deps d
     rw [hm] at hd
     cases hm' : st'.dep? d with
@@ -137,7 +137,7 @@ theorem Sim.congr {s : Snapshot} {st st' : State} {w : World} (hs : Sim s st w) 
       rw [hm'] at hd
       have hd : m'.strip = m.strip := Option.some.inj hd
       obtain ⟨ps, h1, h2, h3⟩ := strip_eq_map h.pods
-      refine ⟨m', rfl, ?_, ?_, ?_, ?_⟩
+      refine ⟨m', rfl, ?_, ?_, ?_, ?_, ?_⟩
       · have e := congrArg (fun x : MDep => x.floor) hd
         simp only [MDep.strip] at e
         rw [e]; exact hfl
@@ -157,6 +157,9 @@ theorem Sim.congr {s : Snapshot} {st st' : State} {w : World} (hs : Sim s st w) 
         intro x hx
         obtain ⟨hd', -, -, -, hg'⟩ := MPod.strip_parts (h3 x hx)
         simp [hd', hg']
+      · have e := congrArg (fun x : MDep => x.floor) hd
+        simp only [MDep.strip] at e
+        rw [e]; exact hmax
   owner := by
     intro p hp hd
     obtain ⟨ps, h1, h2, h3⟩ := strip_eq_map h.pods
@@ -166,6 +169,13 @@ theorem Sim.congr {s : Snapshot} {st st' : State} {w : World} (hs : Sim s st w) 
     have hx1 : x.1 ∈ st.pods := by rw [← h1]; exact List.mem_map_of_mem hx
     rw [ho']; exact hs.owner x.1 hx1 (hd' ▸ hd)
   nodes := by rw [h.nodes]; exact hs.nodes
+  mu := by
+    intro m' hm'
+    have : m'.strip ∈ st.deps.map MDep.strip := by rw [← h.deps]; exact List.mem_map_of_mem hm'
+    obtain ⟨m, hm, he⟩ := List.mem_map.mp this
+    have e := congrArg (fun x : MDep => x.maxUnavail) he
+    simp only [MDep.strip] at e
+    rw [← e]; exact hs.mu m hm
 
 /-! ## Bookkeeping steps -/
 

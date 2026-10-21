@@ -53,6 +53,12 @@ theorem map_left {R : α → β → Prop} {S : γ → β → Prop} {l1 : List α
   | nil => exact .nil
   | cons hab _ ih => exact .cons (hf _ _ hab) ih
 
+theorem map_left_mem {R : α → β → Prop} {S : γ → β → Prop} {l1 : List α} {l2 : List β} (f : α → γ)
+    (hf : ∀ a b, a ∈ l1 → R a b → S (f a) b) (h : Forall2 R l1 l2) : Forall2 S (l1.map f) l2 := by
+  induction h with
+  | nil => exact .nil
+  | cons hab _ ih => exact .cons (hf _ _ (by simp) hab) (ih (fun a b ha hr => hf a b (by simp [ha]) hr))
+
 theorem comp {R : α → β → Prop} {S : β → γ → Prop} {l1 : List α} {l2 : List β} {l3 : List γ}
     (h1 : Forall2 R l1 l2) (h2 : Forall2 S l2 l3) : Forall2 (fun a c => ∃ b, R a b ∧ S b c) l1 l3 := by
   induction h1 generalizing l3 with
