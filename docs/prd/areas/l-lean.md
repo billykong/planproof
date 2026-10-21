@@ -2,7 +2,7 @@
 
 **Goal:** turn "the checker is small and well tested" into "for the core rules, the checker is proved correct against a precise model". A Lean 4 model of the semantics, a checker written in Lean with theorems that a Proved verdict implies the core rules hold, and differential tests that the Go kernel gives the same verdicts as the Lean checker. Covers goals G1 and G2. The approach copies AWS's Cedar: a model in Lean, proofs about the model, and differential testing of the production code against it ([prior art](../../prior-art.md#4-language-models-with-a-verifier)).
 
-Status: **In progress** (phase 5). Milestone 1 (toolchain, CI) done 2026-10-21. Decided 2026-10-17: prove the core rules first (frame, budget, never-zero, cordon-first, limits, and capacity through a checked placement), with the model and differential tests covering every rule; core Lean only, no Mathlib.
+Status: **In progress** (phase 5). Milestone 1 (toolchain, CI) and milestone 3 (the Lean checker and agreement tests) done 2026-10-21. Decided 2026-10-17: prove the core rules first (frame, budget, never-zero, cordon-first, limits, and capacity through a checked placement), with the model and differential tests covering every rule; core Lean only, no Mathlib.
 
 ## What a proof adds, and what it doesn't
 
@@ -29,7 +29,7 @@ Tests try examples; a proof covers every possible plan, snapshot and policy with
   - **capacity:** the checker returns the placement it found (a witness); the theorem shows each placement fits every node's allocatable resources. The first-fit search itself needs no proof, only the witness check (certifying algorithms, McConnell et al. 2011).
   - Each rule's "only what the plan makes worse" baseline (spec 04) is part of its statement.
 - **Only Proved is claimed.** The theorems say nothing about Refuted or Unknown: the checker is sound, not complete, as in G2.
-- **Same input, two checkers.** A Lean executable, `planproof-lean`, reads the plan, snapshot and policy as JSON that the Go kernel has already parsed and validated, and prints a canonical summary (result, sorted failing rules, trigger). A Go test runs both on a corpus and on fuzzer-generated plans, and fails on any disagreement.
+- **Same input, two checkers.** A Lean executable, `planproof-lean`, reads the same plan, snapshot and policy JSON as the Go kernel, but only inputs the Go kernel accepted (so it needs no validation of its own), and prints a summary: result, failing rules in spec order, Unknown trigger, approval reasons. A Go test runs both on a corpus and on generated plans, and fails on any disagreement.
 - **Integers.** Lean's `Int` and `Nat` don't overflow; Go's `int64` could in principle. The input limits (K-11; replicas at most `maxReplicas`) keep every value far from overflow; the differential tests include values at those limits.
 - **Core Lean only.** No Mathlib: the standard library and built-in tactics (`omega`, `simp`, `decide`). A fast CI build and a small trusted base, in keeping with G1. The toolchain is pinned in `lean/lean-toolchain`.
 - **No escape hatches.** No `sorry`, no new `axiom`, no `native_decide`, no `implemented_by` in the specification or the proofs. CI prints `#print axioms` for the main theorem and fails on anything beyond Lean's standard three (`propext`, `Classical.choice`, `Quot.sound`).
@@ -57,15 +57,15 @@ Tests try examples; a proof covers every possible plan, snapshot and policy with
 | L-10 | The abstract state of [spec 02](../../spec/02-snapshot-and-model.md) and the During and After states of the seven operations of [spec 03](../../spec/03-operations.md), as Lean definitions. | Must | Planned |
 | L-11 | The core rules as declarative properties over a plan's states: `frame`, `budget`, `never-zero`, `cordon-first`, `limits` (each state), `capacity` (placement fits), each with the "only what the plan makes worse" baseline of [spec 04](../../spec/04-rules-and-policy.md). | Must | Planned |
 | L-12 | Concrete placements: a definition of the placements an abstract state allows (each pod on one node from its candidate set, or gone), used by `budget` and `never-zero`. | Must | Planned |
-| L-13 | The other rules (`scope`, `protected`, static `limits`, `assertions`, `no-orphans`, `settled`, `rollback`) and the Unknown triggers, as executable checks, so the checker covers all 13 rules for differential testing. | Must | Planned |
+| L-13 | The other rules (`scope`, `protected`, static `limits`, `assertions`, `no-orphans`, `settled`, `rollback`) and the Unknown triggers, as executable checks, so the checker covers all 13 rules for differential testing. | Must | **Done** (2026-10-21): `lean/Planproof/Check/` covers every rule (`input` is the Go kernel's alone) and every trigger |
 
 ### Checker and differential tests
 
 | ID | Requirement | Priority | Status |
 | --- | --- | --- | --- |
-| L-20 | An executable Lean checker with the Go kernel's structure, and a binary `planproof-lean` that reads parsed inputs as JSON and prints result, sorted failing rules and trigger. | Must | Planned |
-| L-21 | A Go test runs the Go kernel and `planproof-lean` on: the shared case table (`internal/testcases`), the worked examples, every task's reference and naive plan, the 25 seeded plans, the 12 study items, and every plan submitted in the 247 stored agent runs. Zero disagreements. | Must | Planned |
-| L-22 | The same comparison on plans generated by the Go fuzzer (`FuzzCheck`'s corpus and a generator of valid plans over the evals' snapshots), including values at the input limits, run in CI for a fixed time. | Must | Planned |
+| L-20 | An executable Lean checker with the Go kernel's structure, and a binary `planproof-lean` that reads parsed inputs as JSON and prints result, sorted failing rules and trigger. | Must | **Done** (2026-10-21): `lean/Planproof/Check/Model.lean` and `Run.lean` (a function-by-function transliteration of `kernel/model.go`, `run.go`, `rules.go` and the decision part of `check.go`); `planproof-lean` reads one input per line and also prints the approval reasons |
+| L-21 | A Go test runs the Go kernel and `planproof-lean` on: the shared case table (`internal/testcases`), the worked examples, every task's reference and naive plan, the 25 seeded plans, the 12 study items, and every plan submitted in the 247 stored agent runs. Zero disagreements. | Must | **Done** (2026-10-21): `TestCorpus` in `internal/leandiff`, 305 inputs (the study items are reference and seeded plans, already included), reaching every rule except `input` and every Unknown trigger; 0 disagreements |
+| L-22 | The same comparison on plans generated by the Go fuzzer (`FuzzCheck`'s corpus and a generator of valid plans over the evals' snapshots), including values at the input limits, run in CI for a fixed time. | Must | **Done** (2026-10-21): `TestGenerated`, 10,000 plans from a fixed seed over the three evals snapshots and both policies, each plan's goal set to its own effect so most reach the simulation; the test fails unless every result, every simulated rule and the drain, critical and scale-down approvals are reached; 0 disagreements. In CI through `make lean`. Sensitivity: a planted off-by-one in `budget` gave 149 corpus and 886 (of 3,000) generated disagreements; scale-down removing ready pods first gave 0 corpus and 9 of 10,000 generated, the reason for the count. `FuzzCheck`'s own corpus is not yet included |
 
 ### Proofs
 

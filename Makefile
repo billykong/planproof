@@ -108,10 +108,12 @@ results:
 results-check: results
 	@git diff --exit-code -- results/ || { echo "results/ differs from what the commands write: run make results and commit"; exit 1; }
 
-## lean: build the Lean model, checker and proofs, and check them for escape
-## hatches, the Spec size budget and axioms (PRD L-01 to L-03). Needs elan:
+## lean: build the Lean model, checker and proofs, check them for escape
+## hatches, the Spec size budget and axioms (PRD L-01 to L-03), and check
+## that the Go kernel and the Lean checker agree (L-21, L-22). Needs elan:
 ## the toolchain is pinned in lean/lean-toolchain.
 export PATH := $(HOME)/.elan/bin:$(PATH)
 lean:
 	cd lean && lake build
 	./scripts/lean-check.sh
+	PLANPROOF_LEAN_REQUIRED=1 go test -count=1 ./internal/leandiff

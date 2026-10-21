@@ -27,9 +27,10 @@ if [ -d Planproof/Spec ]; then
   [ "$lines" -le 600 ] || { echo "lean-check: Spec over budget"; fail=1; }
 fi
 
-if [ -s theorems.txt ]; then
+theorems=$(grep -v '^#' theorems.txt 2>/dev/null | grep . || true)
+if [ -n "$theorems" ]; then
   check=$(mktemp --suffix=.lean)
-  { echo "import Planproof"; grep -v '^#' theorems.txt | grep . | sed 's/^/#print axioms /'; } > "$check"
+  { echo "import Planproof"; echo "$theorems" | sed 's/^/#print axioms /'; } > "$check"
   out=$(lake env lean "$check" 2>&1); rm -f "$check"
   echo "$out"
   if echo "$out" | grep -qE 'error|sorryAx'; then echo "lean-check: axiom check failed"; fail=1; fi
