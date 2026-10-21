@@ -46,7 +46,7 @@ Parameters: `node`.
 
 ## uncordon
 
-Parameters: `node`. **During** = **After**: `unschedulable := false`. If the node is ready and untainted, every pod still pending (made or moved by the plan and not yet ready) gains it as a candidate: the scheduler may place a pending pod on a node that becomes schedulable while it waits (kernel 0.5.0, 2026-10-21; until then candidates were fixed when the pod was made, and a plan that can take a deployment to zero was proved). Unknown if `node-not-ready`.
+Parameters: `node`. **During** = **After**: `unschedulable := false`. If the node is ready and untainted, every pod that isn't ready gains it as a candidate: such a pod may still be pending, and the scheduler may place a pending pod on a node that becomes schedulable while it waits (kernel 0.5.0, 2026-10-21; until then candidates were fixed when the pod was made, and a plan that can take a deployment to zero was proved). Unknown if `node-not-ready`.
 
 ## drain
 

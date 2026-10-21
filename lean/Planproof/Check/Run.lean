@@ -163,9 +163,10 @@ def applyOp (st : State) (s : Step) : State × Bool :=
   | "cordon" => (st.updNode s.node fun n => { n with unsched := true }, true)
   | "uncordon" =>
     let st := st.updNode s.node fun n => { n with unsched := false }
-    -- A pod still pending may be scheduled onto it (kernel 0.5.0).
+    -- A pod that isn't ready may still be pending and be scheduled onto it
+    -- (kernel 0.5.0).
     if (st.node? s.node).any fun n => n.ready && !n.taints then
-      (st.updPods (fun p => p.created && !p.ready && !p.gone && !p.nodes.contains s.node)
+      (st.updPods (fun p => !p.ready && !p.gone && !p.nodes.contains s.node)
         fun p => { p with nodes := sortStrings (p.nodes ++ [s.node]) }, true)
     else (st, true)
   | "drain" =>
