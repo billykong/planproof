@@ -416,6 +416,13 @@ func randomPlan(rng *rand.Rand, snap, pol []byte) map[string]any {
 		if n := node(); rng.IntN(2) == 0 && n != nodes[0] {
 			nodes = append(nodes, n)
 		}
+		// Sometimes scale up first, so drains meet pods that may be on any
+		// node. (This alone doesn't reach the case kernel 0.3.0 fixed; the case
+		// table has it.)
+		if d, _, r := dep(); rng.IntN(2) == 0 {
+			steps = append(steps, map[string]any{"op": "scale", "deployment": d, "replicas": r + 1 + rng.IntN(2)},
+				map[string]any{"op": "wait", "deployments": []string{d}, "timeoutSeconds": 300})
+		}
 		for _, n := range nodes {
 			steps = append(steps, map[string]any{"op": "cordon", "node": n})
 		}

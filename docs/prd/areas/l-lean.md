@@ -4,6 +4,10 @@
 
 Status: **In progress** (phase 5). Milestone 1 (toolchain, CI) and milestone 3 (the Lean checker and agreement tests) done 2026-10-21. Decided 2026-10-17: prove the core rules first (frame, budget, never-zero, cordon-first, limits, and capacity through a checked placement), with the model and differential tests covering every rule; core Lean only, no Mathlib.
 
+## Findings
+
+- **2026-10-21: a soundness bug in the Go kernel, found while planning the `never-zero` proof.** To state "for every concrete placement", the drain step has to say where a pod that *might* be on the drained node can be afterwards. The kernel said "on a schedulable node"; but the pod may have been on another of its candidate nodes and stayed there. A plan (scale cart from 1 to 2, cordon n1 and n2, drain n1, wait, drain n2) was proved although the new pod may sit on n2 with the old one, and draining n2 then takes cart to zero. Neither the corpus nor 10,000 generated plans contained the case. Fixed in kernel 0.3.0 and spec 03; the plan is now in the case table; the Lean checker has the same fix.
+
 ## What a proof adds, and what it doesn't
 
 Tests try examples; a proof covers every possible plan, snapshot and policy within the model. Lean checks each proof mechanically.

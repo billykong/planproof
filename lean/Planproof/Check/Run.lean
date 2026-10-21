@@ -111,8 +111,11 @@ def apply (r : Run) (s : Step) : Run :=
   | "drain" =>
     let sched := st.schedulable
     let moved := st.pods.filter fun p => p.dep != "" && p.mightBeOn s.node
+    -- It was on this node and moves to a schedulable one, or it was on one
+    -- of its other candidates and stays there (kernel 0.3.0).
     let st := st.updPods (fun p => p.dep != "" && p.mightBeOn s.node) fun p =>
-      { p with ready := false, created := true, nodes := sched }
+      { p with ready := false, created := true,
+               nodes := compact (sortStrings (sched ++ p.nodes.filter (· != s.node))) }
     let r := moved.foldl (init := { r with st }) fun r p => r.disrupt p.dep
     let r := { r with st := r.st.updNode s.node fun n => { n with drained := true }, drains := r.drains || plan }
     r.placeOrFail (moved.map (·.name))

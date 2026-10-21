@@ -1,5 +1,5 @@
 PLAN CHECK: `drain-two-nodes`
-Plan sha256:290f90c50533. Snapshot sha256:01d582c7f8de. Policy sha256:7df1f0660a8b. Kernel 0.2.0.
+Plan sha256:290f90c50533. Snapshot sha256:01d582c7f8de. Policy sha256:7df1f0660a8b. Kernel 0.3.0.
 
 1. GOAL
    1. Stop new pods on node `n1`.

@@ -215,6 +215,37 @@ steps:
 `, Want: "Refuted", Rule: "never-zero"},
 	{Name: "never-zero: scale to zero allowed", Snap: func(m map[string]any) { m["pdbs"] = m["pdbs"].([]any)[1:] }, Pol: limits("allowScaleToZero", true), Plan: scaleTo(0), Want: "Proved"},
 	{Name: "never-zero: scale to zero not allowed", Snap: func(m map[string]any) { m["pdbs"] = m["pdbs"].([]any)[1:] }, Plan: scaleTo(0), Want: "Refuted", Rule: "never-zero"},
+	// Found while writing the Lean proof (kernel 0.3.0): the scaled-up pod may be
+	// placed on n2, next to cart-b, so draining n1 moves neither and draining n2
+	// takes both. Until 0.2.0 the model moved it to "the schedulable nodes" at
+	// the n1 drain, forgot it could still be on n2, and proved this plan.
+	{Name: "never-zero: a pod that may have stayed on another candidate node", Snap: func(m map[string]any) {
+		var pods []any
+		for _, p := range m["pods"].([]any) {
+			if p.(map[string]any)["name"] != "cart-a" {
+				pods = append(pods, p)
+			}
+		}
+		m["pods"], m["pdbs"] = pods, m["pdbs"].([]any)[1:]
+		d := Named(m, "deployments", "cart")
+		d["replicas"], d["readyReplicas"], d["updatedReplicas"] = 1, 1, 1
+	}, Plan: `
+goal:
+  - {deployment: shop/cart, field: replicas, from: 1, to: 2}
+  - {node: n1, field: unschedulable, from: false, to: true}
+  - {node: n2, field: unschedulable, from: false, to: true}
+  - {node: n1, field: drained, from: false, to: true}
+  - {node: n2, field: drained, from: false, to: true}
+steps:
+  - {op: scale, deployment: shop/cart, replicas: 2}
+  - {op: wait, deployments: [shop/cart], timeoutSeconds: 300}
+  - {op: cordon, node: n1}
+  - {op: cordon, node: n2}
+  - {op: drain, node: n1}
+  - {op: wait, deployments: [shop/cart, shop/checkout], timeoutSeconds: 300}
+  - {op: drain, node: n2}
+  - {op: wait, deployments: [shop/cart, shop/checkout, shop/payments], timeoutSeconds: 300}
+`, Want: "Refuted", Rule: "never-zero"},
 	{Name: "never-zero: Recreate strategy", Snap: func(m map[string]any) {
 		Named(m, "deployments", "cart")["strategy"].(map[string]any)["type"] = "Recreate"
 		m["pdbs"] = m["pdbs"].([]any)[1:]

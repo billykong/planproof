@@ -3,7 +3,7 @@
   "kind": "Verdict",
   "planName": "drain-two-nodes-no-wait",
   "result": "Refuted",
-  "kernelVersion": "0.2.0",
+  "kernelVersion": "0.3.0",
   "planSha256": "sha256:c0f7a397fe0e0618b6818d1d40eb470f9e51dbec1a0b8e4fcc87fde21076eb68",
   "snapshotSha256": "sha256:01d582c7f8de56cb623e5534474d6438c5ccaddd0f698cefadd4a691e777b625",
   "policySha256": "sha256:7df1f0660a8b766fb6d46f10e1817f21252038c9bc401ff24078c244a705bf07",

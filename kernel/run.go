@@ -187,7 +187,11 @@ func (r *run) apply(ref StepRef, s Step) bool {
 		sched := st.schedulable()
 		for _, p := range st.pods {
 			if p.dep != "" && p.mightBeOn(s.Node) {
-				p.ready, p.created, p.nodes = false, true, sched
+				// It was on this node and moves to a schedulable one, or it was on
+				// one of its other candidates and stays there (kernel 0.3.0).
+				nodes := append(slices.Clone(sched), slices.DeleteFunc(slices.Clone(p.nodes), func(n string) bool { return n == s.Node })...)
+				slices.Sort(nodes)
+				p.ready, p.created, p.nodes = false, true, slices.Compact(nodes)
 				moved = append(moved, p)
 				r.disrupted[p.dep] = r.disrupted[p.dep] || plan
 			}
