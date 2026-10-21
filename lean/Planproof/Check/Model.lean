@@ -196,15 +196,19 @@ def place (st : State) (names : List String) : State × Option MPod :=
 def remove (st : State) (names : List String) : State :=
   { st with pods := st.pods.filter fun p => !names.contains p.name }
 
-/-- Every desired field (spec 02), for rule `frame`: (object, field, container) and value. -/
-def desired (st : State) : List ((String × String × String) × Value) :=
-  (st.deps.flatMap fun d =>
-    [(("deployment/" ++ d.name, "replicas", ""), Value.int d.replicas),
-     (("deployment/" ++ d.name, "restarted", ""), Value.bool d.restarted)] ++
-    d.images.map fun (c, img) => (("deployment/" ++ d.name, "image", c), Value.str img)) ++
-  (st.nodes.flatMap fun n =>
-    [(("node/" ++ n.name, "unschedulable", ""), Value.bool n.unsched),
-     (("node/" ++ n.name, "drained", ""), Value.bool n.drained)])
+/-- Every desired field that exists in the state, in a fixed order. -/
+def keys (st : State) : List Key :=
+  (st.deps.flatMap fun d => [Key.replicas d.name, Key.restarted d.name] ++ d.images.map fun (c, _) => Key.image d.name c) ++
+  (st.nodes.flatMap fun n => [Key.unsched n.name, Key.drained n.name])
+
+/-- A desired field's value in the state (spec 02), or `none` if the object
+doesn't exist. -/
+def field (st : State) : Key → Option Value
+  | .replicas d => (st.dep? d).map fun m => .int m.replicas
+  | .restarted d => (st.dep? d).map fun m => .bool m.restarted
+  | .image d c => ((st.dep? d).bind fun m => (m.images.find? (·.1 == c)).map (·.2)).map .str
+  | .unsched n => (st.node? n).map fun m => .bool m.unsched
+  | .drained n => (st.node? n).map fun m => .bool m.drained
 
 end State
 

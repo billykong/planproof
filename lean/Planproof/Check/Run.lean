@@ -7,6 +7,10 @@ A transliteration of the Go kernel's `kernel/run.go`, `kernel/rules.go` and
 the decision part of `kernel/check.go`. It keeps what the verdict's result,
 failing rules, Unknown trigger and approval depend on; the evidence numbers
 the packet shows stay in Go.
+
+Each rule check is a function that returns the rules it finds broken, so
+that "the check passed" is "the list is empty". The agreement tests (PRD
+L-21, L-22) check that this gives the Go kernel's verdicts.
 -/
 namespace Planproof
 
@@ -19,46 +23,33 @@ def rules : List String :=
   ["input", "scope", "protected", "limits", "assertions", "cordon-first", "no-orphans",
    "budget", "never-zero", "capacity", "settled", "frame", "rollback"]
 
-/-- A check in progress. -/
-structure Run where
+/-- What stays fixed during a check: the inputs and the snapshot's numbers. -/
+structure Ctx where
   plan : Plan
   policy : Policy
-  st : State
+  st0 : State
   depNames : List String
   initial : List (String × Int)
-  initDesired : List ((String × String × String) × Value)
   initUnsched : Int
   initSched : Int
-  failures : List String
-  unknown : Option String
-  rollback : Bool
-  drains : Bool
-  scaleDown : Bool
-  setsImage : Bool
-  disrupted : List String
 deriving Inhabited
 
-def newRun (snap : Snapshot) (plan : Plan) (pol : Policy) : Run :=
+def Ctx.make (snap : Snapshot) (plan : Plan) (pol : Policy) : Ctx :=
   let st := build snap
   let depNames := sortStrings (st.deps.map (·.name))
-  let (u, s) := st.nodeCounts
-  { plan, policy := pol, st, depNames, initial := depNames.map fun d => (d, st.avail d),
-    initDesired := st.desired, initUnsched := u, initSched := s, failures := [], unknown := none,
-    rollback := false, drains := false, scaleDown := false, setsImage := false, disrupted := [] }
+  { plan, policy := pol, st0 := st, depNames, initial := depNames.map fun d => (d, st.avail d),
+    initUnsched := st.nodeCounts.1, initSched := st.nodeCounts.2 }
 
-namespace Run
+def Ctx.initialOf (c : Ctx) (d : String) : Int := (lookup c.initial d).getD 0
 
-/-- Record a broken rule; during the rollback it counts as rule `rollback`. -/
-def fail (r : Run) (rule : String) : Run :=
-  { r with failures := r.failures ++ [if r.rollback then "rollback" else rule] }
+/-- The goal scales the deployment to zero and the policy allows it. -/
+def Ctx.zeroAllowed (c : Ctx) (d : String) : Bool :=
+  c.policy.limits.allowZero && c.plan.goal.any fun ch => ch.deployment == d && ch.field == "replicas" && ch.toV == Value.int 0
 
-def initialOf (r : Run) (d : String) : Int := (lookup r.initial d).getD 0
+/-! ## Unknown triggers (spec 02, 03) -/
 
-def disrupt (r : Run) (d : String) : Run :=
-  if r.rollback || r.disrupted.contains d then r else { r with disrupted := r.disrupted ++ [d] }
-
-def depTrigger (r : Run) (d : String) : Option String :=
-  match r.st.dep? d with
+def depTrigger (st : State) (d : String) : Option String :=
+  match st.dep? d with
   | none => none
   | some m =>
     if m.hpa then some "hpa"
@@ -67,9 +58,8 @@ def depTrigger (r : Run) (d : String) : Option String :=
     else if m.rolling then some "overlapping-change"
     else none
 
-/-- The first Unknown trigger that applies to a step (spec 02, 03). -/
-def trigger (r : Run) (s : Step) : Option String :=
-  let st := r.st
+/-- The first Unknown trigger that applies to a step. -/
+def trigger (st : State) (s : Step) : Option String :=
   let notReady := ["cordon", "uncordon", "drain"].contains s.op && !((st.node? s.node).map (·.ready) |>.getD false)
   if notReady then some "node-not-ready"
   else if s.op == "drain" then
@@ -77,11 +67,11 @@ def trigger (r : Run) (s : Step) : Option String :=
       if !p.mightBeOn s.node || p.owner == "DaemonSet" || p.owner == "None" then none
       else if p.localStorage then some "local-storage"
       else if p.dep == "" || (st.dep? p.dep).isNone then some "stateful-owner"
-      else if let some t := r.depTrigger p.dep then some t
+      else if let some t := depTrigger st p.dep then some t
       else if p.placement then some "placement-rules"
       else none
   else if ["scale", "set-image", "rollout-restart"].contains s.op then
-    match r.depTrigger s.deployment with
+    match depTrigger st s.deployment with
     | some t => some t
     | none =>
       match st.dep? s.deployment with
@@ -92,60 +82,93 @@ def trigger (r : Run) (s : Step) : Option String :=
         else none
   else none
 
-def drainRequires (r : Run) (n : String) : Run :=
-  let r := if (r.st.node? n).map (·.unsched) |>.getD false then r else r.fail "cordon-first"
-  r.st.pods.foldl (init := r) fun r p => if p.owner == "None" && p.mightBeOn n then r.fail "no-orphans" else r
+/-! ## Checks before and after a step -/
 
-def placeOrFail (r : Run) (names : List String) : Run :=
-  let (st, bad) := r.st.place names
-  let r := { r with st }
-  if bad.isSome then r.fail "capacity" else r
+/-- Rule `assertions`: a step's `pre` or `post` assertions on a state. -/
+def assertFails (st : State) (s : Step) : Option Assertions → List String
+  | none => []
+  | some a =>
+    let depFails := match st.dep? s.deployment with
+      | none => []
+      | some d =>
+        (match a.replicas with
+          | some v => if v == d.replicas then [] else ["assertions"]
+          | none => []) ++
+        (match a.image with
+          | some v =>
+            let c := if a.container == "" then s.container else a.container
+            if v == ((lookup d.images c).getD "") then [] else ["assertions"]
+          | none => [])
+    let nodeFails := match st.node? s.node with
+      | none => []
+      | some n =>
+        (match a.unsched with
+          | some v => if v == n.unsched then [] else ["assertions"]
+          | none => []) ++
+        (match a.podsOnNode with
+          | some v =>
+            let count : Int := (st.pods.filter fun p => p.owner != "DaemonSet" && p.mightBeOn s.node).length
+            if v == count then [] else ["assertions"]
+          | none => [])
+    depFails ++ nodeFails
 
-/-- Change the state as the step's operation does (spec 03). -/
-def apply (r : Run) (s : Step) : Run :=
-  let st := r.st
-  let plan := !r.rollback
+/-- Rules `cordon-first` and `no-orphans`: what a drain requires. -/
+def drainFails (st : State) (n : String) : List String :=
+  (if (st.node? n).map (·.unsched) |>.getD false then [] else ["cordon-first"]) ++
+  (st.pods.filter fun p => p.owner == "None" && p.mightBeOn n).map fun _ => "no-orphans"
+
+/-- The rules checked at every state: budget, never-zero, limits (spec 04). -/
+def eachStateFails (c : Ctx) (st : State) : List String :=
+  let lim := c.policy.limits
+  let (u, s) := st.nodeCounts
+  ((st.pdbs.filter fun b => decide (st.avail b.dep < st.need b) && decide (st.avail b.dep < c.initialOf b.dep)).map fun _ => "budget") ++
+  ((c.depNames.filter fun d => decide (c.initialOf d ≥ 1) && st.avail d == 0 && !c.zeroAllowed d).map fun _ => "never-zero") ++
+  (if decide (u > lim.maxUnsched) && decide (u > c.initUnsched) then ["limits"] else []) ++
+  (if decide (s < lim.minSched) && decide (s < c.initSched) then ["limits"] else [])
+
+/-! ## Operations (spec 03) -/
+
+/-- The state after an operation, and whether every pod it created or moved
+found a place (rule `capacity`). -/
+def applyOp (st : State) (s : Step) : State × Bool :=
   match s.op with
-  | "cordon" => { r with st := st.updNode s.node fun n => { n with unsched := true } }
-  | "uncordon" => { r with st := st.updNode s.node fun n => { n with unsched := false } }
+  | "cordon" => (st.updNode s.node fun n => { n with unsched := true }, true)
+  | "uncordon" => (st.updNode s.node fun n => { n with unsched := false }, true)
   | "drain" =>
     let sched := st.schedulable
-    let moved := st.pods.filter fun p => p.dep != "" && p.mightBeOn s.node
+    let moved := (st.pods.filter fun p => p.dep != "" && p.mightBeOn s.node).map (·.name)
     -- It was on this node and moves to a schedulable one, or it was on one
     -- of its other candidates and stays there (kernel 0.3.0).
     let st := st.updPods (fun p => p.dep != "" && p.mightBeOn s.node) fun p =>
       { p with ready := false, created := true,
                nodes := compact (sortStrings (sched ++ p.nodes.filter (· != s.node))) }
-    let r := moved.foldl (init := { r with st }) fun r p => r.disrupt p.dep
-    let r := { r with st := r.st.updNode s.node fun n => { n with drained := true }, drains := r.drains || plan }
-    r.placeOrFail (moved.map (·.name))
+    let st := st.updNode s.node fun n => { n with drained := true }
+    let (st, bad) := st.place moved
+    (st, bad.isNone)
   | "scale" =>
     match st.dep? s.deployment with
-    | none => r
+    | none => (st, true)
     | some m =>
       let n := s.replicas.getD 0
       let old := m.replicas
       let st := st.updDep s.deployment fun d => { d with replicas := n }
       if n > old then
         let (st, names) := st.newPods s.deployment (n - old)
-        { r with st }.placeOrFail names
+        let (st, bad) := st.place names
+        (st, bad.isNone)
       else if n < old then
-        let r := ({ r with st, scaleDown := r.scaleDown || plan }).disrupt s.deployment
         -- Pods that aren't ready go first; the rest may be anywhere they were.
         let pods := (st.podsOf s.deployment).mergeSort fun a b => !a.ready || b.ready
         let wher := compact (sortStrings (pods.flatMap (·.nodes)))
         let drop := pods.take (pods.length - n.toNat) |>.map (·.name)
         let keep := pods.drop (pods.length - n.toNat) |>.map (·.name)
         let st := st.updPods (fun p => drop.contains p.name) fun p => { p with gone := true, ready := false }
-        let st := st.updPods (fun p => keep.contains p.name) fun p => { p with nodes := wher }
-        { r with st }
-      else { r with st }
+        (st.updPods (fun p => keep.contains p.name) fun p => { p with nodes := wher }, true)
+      else (st, true)
   | "set-image" | "rollout-restart" =>
     match st.dep? s.deployment with
-    | none => r
+    | none => (st, true)
     | some m =>
-      let r := r.disrupt s.deployment
-      let r := { r with setsImage := r.setsImage || (plan && s.op == "set-image") }
       let floor := if m.recreate then 0 else max 0 (min (st.avail s.deployment) (m.replicas - m.maxUnavail))
       let st := st.updDep s.deployment fun d => { d with floor }
       -- Surge pods must fit on top of the existing ones.
@@ -155,7 +178,7 @@ def apply (r : Run) (s : Step) : Run :=
           let (st, surge) := st.newPods s.deployment m.maxSurge
           let (st, b) := st.place surge
           (st.remove surge, b.isSome)
-      if bad then ({ r with st }).fail "capacity"
+      if bad then (st, false)
       else
         let st := st.remove ((st.podsOf s.deployment).map (·.name))
         let st := st.updDep s.deployment fun d =>
@@ -163,76 +186,67 @@ def apply (r : Run) (s : Step) : Run :=
             { d with rolling := true, images := d.images.map fun (c, i) => if c == s.container then (c, s.image) else (c, i) }
           else { d with rolling := true, restarted := true }
         let (st, names) := st.newPods s.deployment m.replicas
-        { r with st }.placeOrFail names
+        let (st, bad) := st.place names
+        (st, bad.isNone)
   | "wait" =>
-    let st := s.deployments.foldl (init := st) fun st d =>
+    (s.deployments.foldl (init := st) fun st d =>
       let st := st.updDep d fun x => { x with rolling := false }
-      st.updPods (fun p => p.dep == d && !p.gone) fun p => { p with ready := true }
-    { r with st }
-  | _ => r
+      st.updPods (fun p => p.dep == d && !p.gone) fun p => { p with ready := true }, true)
+  | _ => (st, true)
 
-/-- The goal scales the deployment to zero and the policy allows it. -/
-def zeroAllowed (r : Run) (d : String) : Bool :=
-  r.policy.limits.allowZero && r.plan.goal.any fun c => c.deployment == d && c.field == "replicas" && c.toV == Value.int 0
+/-! ## Approval (spec 04) -/
 
-/-- The rules checked at every state: budget, never-zero, limits (spec 04). -/
-def eachState (r : Run) : Run :=
-  let st := r.st
-  let lim := r.policy.limits
-  let r := st.pdbs.foldl (init := r) fun r b =>
-    let a := st.avail b.dep
-    if decide (a < st.need b) && decide (a < r.initialOf b.dep) then r.fail "budget" else r
-  let r := r.depNames.foldl (init := r) fun r d =>
-    if decide (r.initialOf d ≥ 1) && st.avail d == 0 && !r.zeroAllowed d then r.fail "never-zero" else r
-  let (u, s) := st.nodeCounts
-  let r := if decide (u > lim.maxUnsched) && decide (u > r.initUnsched) then r.fail "limits" else r
-  if decide (s < lim.minSched) && decide (s < r.initSched) then r.fail "limits" else r
+/-- What the plan's steps did, for `approvalRequiredFor`. -/
+structure Flags where
+  drains : Bool := false
+  scaleDown : Bool := false
+  setsImage : Bool := false
+  disrupted : List String := []
+deriving Inhabited
 
-def assertOn (r : Run) (s : Step) : Option Assertions → Run
-  | none => r
-  | some a =>
-    let st := r.st
-    let r := match st.dep? s.deployment with
-      | none => r
-      | some d =>
-        let r := match a.replicas with
-          | some v => if v == d.replicas then r else r.fail "assertions"
-          | none => r
-        match a.image with
-        | some v =>
-          let c := if a.container == "" then s.container else a.container
-          if v == ((lookup d.images c).getD "") then r else r.fail "assertions"
-        | none => r
-    match st.node? s.node with
-    | none => r
-    | some n =>
-      let r := match a.unsched with
-        | some v => if v == n.unsched then r else r.fail "assertions"
-        | none => r
-      match a.podsOnNode with
-      | some v =>
-        let count : Int := (st.pods.filter fun p => p.owner != "DaemonSet" && p.mightBeOn s.node).length
-        if v == count then r else r.fail "assertions"
-      | none => r
+/-- The flags after a plan step, from the state before it. -/
+def Flags.update (fl : Flags) (st : State) (s : Step) : Flags :=
+  match s.op with
+  | "drain" =>
+    { fl with drains := true,
+              disrupted := fl.disrupted ++ (st.pods.filter fun p => p.dep != "" && p.mightBeOn s.node).map (·.dep) }
+  | "scale" =>
+    match st.dep? s.deployment with
+    | some m => if s.replicas.getD 0 < m.replicas
+      then { fl with scaleDown := true, disrupted := fl.disrupted ++ [s.deployment] } else fl
+    | none => fl
+  | "set-image" | "rollout-restart" =>
+    match st.dep? s.deployment with
+    | some _ => { fl with setsImage := fl.setsImage || s.op == "set-image", disrupted := fl.disrupted ++ [s.deployment] }
+    | none => fl
+  | _ => fl
 
-/-- Run one step (spec 05, step 4); `false` means stop. -/
-def doStep (r : Run) (s : Step) : Run × Bool :=
-  match r.trigger s with
-  | some t => ({ r with unknown := some t }, false)
-  | none =>
-    let r := r.assertOn s s.pre
-    let r := if s.op == "drain" then r.drainRequires s.node else r
-    if !r.failures.isEmpty then (r, false)
-    else
-      let r := ((r.apply s).eachState).assertOn s s.post
-      (r, r.failures.isEmpty)
+/-! ## Running the steps (spec 05, step 4) -/
 
-/-- Run steps until one stops the check. -/
-def doSteps (r : Run) : List Step → Run × Bool
-  | [] => (r, true)
+/-- Where a run of steps stopped. -/
+structure Stop where
+  st : State
+  flags : Flags
+  failures : List String
+  unknown : Option String
+
+/-- Run steps until one is Unknown or breaks a rule. `inPlan` is false for
+the rollback, whose steps don't count for approval. -/
+def doSteps (c : Ctx) (inPlan : Bool) (st : State) (fl : Flags) : List Step → Stop
+  | [] => ⟨st, fl, [], none⟩
   | s :: rest =>
-    let (r, ok) := r.doStep s
-    if ok then r.doSteps rest else (r, false)
+    match trigger st s with
+    | some t => ⟨st, fl, [], some t⟩
+    | none =>
+      let pre := assertFails st s s.pre ++ (if s.op == "drain" then drainFails st s.node else [])
+      if !pre.isEmpty then ⟨st, fl, pre, none⟩
+      else
+        let fl := if inPlan then fl.update st s else fl
+        let (st', ok) := applyOp st s
+        let fs := (if ok then [] else ["capacity"]) ++ eachStateFails c st' ++ assertFails st' s s.post
+        if fs.isEmpty then doSteps c inPlan st' fl rest else ⟨st', fl, fs, none⟩
+
+/-! ## Static and end checks (spec 04) -/
 
 /-- An image pinned by digest: `name@sha256:` and 64 lowercase hex characters. -/
 def isHash (s : String) : Bool :=
@@ -240,119 +254,121 @@ def isHash (s : String) : Bool :=
     let h := s.drop 7
     h.length == 64 && h.all fun c => c.isDigit || ('a' ≤ c && c ≤ 'f')
 
-def noDigest (r : Run) (image : String) : Bool :=
-  r.policy.limits.requireDigest &&
+def Ctx.noDigest (c : Ctx) (image : String) : Bool :=
+  c.policy.limits.requireDigest &&
     match image.splitOn "@" with
     | _ :: rest@(_ :: _) => !isHash ("@".intercalate rest)
     | _ => true
 
-def changeKey (c : Change) : String × String × String :=
-  (if c.deployment != "" then "deployment/" ++ c.deployment else "node/" ++ c.node, c.field, c.container)
-
-/-- The rules that need no simulation: scope, protected, static limits and
-static frame (spec 04). -/
-def static (r : Run) : Run :=
-  let plan := r.plan
-  let pol := r.policy
-  let st := r.st
+/-- Rules `scope` and `protected`. -/
+def scopeFails (c : Ctx) : List String :=
+  let plan := c.plan
+  let pol := c.policy
+  let st := c.st0
   let steps := plan.steps ++ plan.rollback
   let goalDeps := (plan.goal.filter (·.deployment != "")).map (·.deployment)
   let goalNodes := (plan.goal.filter (·.deployment == "")).map (·.node)
   let deps := goalDeps ++ steps.flatMap fun s => s.deployments ++ [s.deployment]
   let nodes := goalNodes ++ steps.map (·.node)
   let changed := goalDeps ++ steps.map (·.deployment)
-  let r := (compact (sortStrings deps)).foldl (init := r) fun r d =>
+  ((compact (sortStrings deps)).flatMap fun d =>
     let ns := (d.splitOn "/").head?.getD ""
-    let r := if d == "" then r
-      else if !pol.managedNamespaces.contains ns then r.fail "scope"
-      else if (st.dep? d).isNone then r.fail "scope"
-      else r
-    if changed.contains d && pol.protectedDeps.contains d then r.fail "protected" else r
-  let r := (compact (sortStrings nodes)).foldl (init := r) fun r n =>
-    if n == "" then r
-    else if !pol.managedNodes.contains n then r.fail "scope"
-    else if (st.node? n).isNone then r.fail "scope"
-    else r
-  if !r.failures.isEmpty then r
-  else
-    let lim := pol.limits
-    let r := steps.foldl (init := r) fun r s =>
-      let r :=
-        if s.op == "scale" && decide (s.replicas.getD 0 > lim.maxReplicas) then r.fail "limits"
-        else if s.op == "wait" && decide (s.timeout.getD 0 > lim.maxWait) then r.fail "limits"
-        else if s.op == "set-image" && r.noDigest s.image then r.fail "limits"
-        else r
-      if s.op == "set-image" && ((st.dep? s.deployment).map fun d => (lookup d.images s.container).isNone).getD true
-      then r.fail "scope" else r
-    let (r, _) := plan.goal.foldl (init := (r, ([] : List (String × String × String)))) fun (r, seen) c =>
-      let k := changeKey c
-      let r := match lookup r.initDesired k with
-        | none => r.fail "scope"
-        | some cur =>
-          if seen.contains k then r.fail "frame"
-          else if cur != c.fromV then r.fail "frame"
-          else if c.fromV == c.toV then r.fail "frame"
-          else if c.field == "replicas" && (match c.toV with | .int i => decide (i > lim.maxReplicas) | _ => false) then r.fail "limits"
-          else if c.field == "image" && (match c.toV with | .str i => r.noDigest i | _ => false) then r.fail "limits"
-          else r
-      (r, seen ++ [k])
-    r
+    (if d == "" then []
+     else if !pol.managedNamespaces.contains ns then ["scope"]
+     else if (st.dep? d).isNone then ["scope"]
+     else []) ++
+    (if changed.contains d && pol.protectedDeps.contains d then ["protected"] else [])) ++
+  ((compact (sortStrings nodes)).flatMap fun n =>
+    if n == "" then []
+    else if !pol.managedNodes.contains n then ["scope"]
+    else if (st.node? n).isNone then ["scope"]
+    else [])
 
-/-- settled, then frame: the plan's effect is exactly its goal. -/
-def endCheck (r : Run) : Run :=
-  let r := r.depNames.foldl (init := r) fun r d =>
-    let rolling := (r.st.dep? d).map (·.rolling) |>.getD false
-    if rolling || (r.st.podsOf d).any fun p => p.created && !p.ready then r.fail "settled" else r
-  if !r.failures.isEmpty then r
+/-- Static `frame` (and `scope`, `limits`) for the goal changes, each after `seen`. -/
+def goalFails (c : Ctx) : List (Option Key) → List Change → List String
+  | _, [] => []
+  | seen, ch :: rest =>
+    let lim := c.policy.limits
+    let k := ch.key
+    (match k.bind c.st0.field with
+      | none => ["scope"]
+      | some cur =>
+        if seen.contains k then ["frame"]
+        else if cur != ch.fromV then ["frame"]
+        else if ch.fromV == ch.toV then ["frame"]
+        else if ch.field == "replicas" && (match ch.toV with | .int i => decide (i > lim.maxReplicas) | _ => false) then ["limits"]
+        else if ch.field == "image" && (match ch.toV with | .str i => c.noDigest i | _ => false) then ["limits"]
+        else []) ++ goalFails c (seen ++ [k]) rest
+
+/-- Static `limits` and the container check, for the steps. -/
+def stepStaticFails (c : Ctx) : List String :=
+  let lim := c.policy.limits
+  (c.plan.steps ++ c.plan.rollback).flatMap fun s =>
+    (if s.op == "scale" && decide (s.replicas.getD 0 > lim.maxReplicas) then ["limits"]
+     else if s.op == "wait" && decide (s.timeout.getD 0 > lim.maxWait) then ["limits"]
+     else if s.op == "set-image" && c.noDigest s.image then ["limits"]
+     else []) ++
+    (if s.op == "set-image" && ((c.st0.dep? s.deployment).map fun d => (lookup d.images s.container).isNone).getD true
+     then ["scope"] else [])
+
+/-- The rules that need no simulation. `scope` first: the rest needs the
+objects to exist. -/
+def staticFails (c : Ctx) : List String :=
+  let sf := scopeFails c
+  if !sf.isEmpty then sf else stepStaticFails c ++ goalFails c [] c.plan.goal
+
+/-- `settled`, then `frame`: the plan's effect is exactly its goal. -/
+def endFails (c : Ctx) (st : State) : List String :=
+  let settled := (c.depNames.filter fun d =>
+    ((st.dep? d).map (·.rolling) |>.getD false) || (st.podsOf d).any fun p => p.created && !p.ready).map fun _ => "settled"
+  if !settled.isEmpty then settled
   else
-    let goal := r.plan.goal.map fun c => (changeKey c, c.toV)
-    let bad := r.st.desired.any fun (k, v) =>
+    let goal := c.plan.goal.filterMap fun ch => ch.key.map fun k => (k, ch.toV)
+    let bad := st.keys.any fun k =>
       match lookup goal k with
-      | some g => v != g
-      | none => some v != lookup r.initDesired k
-    if bad then r.fail "frame" else r
+      | some g => st.field k != some g
+      | none => st.field k != c.st0.field k
+    if bad then ["frame"] else []
 
 /-- After the rollback, each reversible goal field is back to its `from` value. -/
-def restored (r : Run) : Run :=
-  let final := r.st.desired
-  let ok := r.plan.goal.all fun c =>
-    c.field == "drained" || c.field == "restarted" || lookup final (changeKey c) == some c.fromV
-  if ok then r else r.fail "rollback"
+def restoredFails (c : Ctx) (st : State) : List String :=
+  if c.plan.goal.all fun ch => ch.field == "drained" || ch.field == "restarted" || ch.key.bind st.field == some ch.fromV
+  then [] else ["rollback"]
+
+/-! ## The check -/
 
 /-- The algorithm of spec 05, steps 3 to 6. -/
-def execute (r : Run) : Run :=
-  let r := r.static
-  if !r.failures.isEmpty then r
+def execute (c : Ctx) : Stop :=
+  let sf := staticFails c
+  if !sf.isEmpty then ⟨c.st0, {}, sf, none⟩
   else
-    let (r, ok) := r.doSteps r.plan.steps
-    if !ok then r
+    let r := doSteps c true c.st0 {} c.plan.steps
+    if r.unknown.isSome || !r.failures.isEmpty then r
     else
-      let r := r.endCheck
-      if !r.failures.isEmpty || r.plan.rollback.isEmpty then r
+      let ef := endFails c r.st
+      if !ef.isEmpty || c.plan.rollback.isEmpty then { r with failures := ef }
       else
-        let (r, ok) := ({ r with rollback := true }).doSteps r.plan.rollback
-        if !ok then r
-        else ({ r with rollback := false }).restored
+        let rb := doSteps c false r.st r.flags c.plan.rollback
+        if rb.unknown.isSome || !rb.failures.isEmpty then { rb with failures := rb.failures.map fun _ => "rollback" }
+        else { rb with failures := restoredFails c rb.st }
 
-def result (r : Run) : Result :=
+def Stop.result (r : Stop) : Result :=
   if r.unknown.isSome then .unknown else if r.failures.isEmpty then .proved else .refuted
 
 /-- Critical deployments the plan names, or whose pods it moves, replaces or removes. -/
-def criticalInvolved (r : Run) : List String :=
-  let named := r.plan.goal.map (·.deployment) ++ r.plan.steps.map (·.deployment)
-  r.policy.criticalDeps.filter fun d => named.contains d || r.disrupted.contains d
+def criticalInvolved (c : Ctx) (fl : Flags) : List String :=
+  let named := c.plan.goal.map (·.deployment) ++ c.plan.steps.map (·.deployment)
+  c.policy.criticalDeps.filter fun d => named.contains d || fl.disrupted.contains d
 
-def approvalReasons (r : Run) : List String :=
-  r.policy.approvalFor.filter fun reason =>
+def approvalReasons (c : Ctx) (fl : Flags) : List String :=
+  c.policy.approvalFor.filter fun reason =>
     match reason with
     | "always" => true
-    | "drain" => r.drains
-    | "critical" => !r.criticalInvolved.isEmpty
-    | "scale-down" => r.scaleDown
-    | "image" => r.setsImage
+    | "drain" => fl.drains
+    | "critical" => !(criticalInvolved c fl).isEmpty
+    | "scale-down" => fl.scaleDown
+    | "image" => fl.setsImage
     | _ => false
-
-end Run
 
 /-- What the agreement tests compare: result, the failing rules in spec
 order, the Unknown trigger, and the approval reasons of a Proved plan. -/
@@ -364,10 +380,11 @@ structure Summary where
 deriving Repr
 
 def check (snap : Snapshot) (plan : Plan) (pol : Policy) : Summary :=
-  let r := (newRun snap plan pol).execute
+  let c := Ctx.make snap plan pol
+  let r := execute c
   { result := r.result,
     rules := rules.filter r.failures.contains,
     trigger := r.unknown,
-    approval := if r.result == .proved then r.approvalReasons else [] }
+    approval := if r.result == .proved then approvalReasons c r.flags else [] }
 
 end Planproof

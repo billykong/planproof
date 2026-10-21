@@ -111,6 +111,29 @@ structure Change where
   toV : Value
 deriving Repr, Inhabited
 
+/-- A desired field (spec 02): what a goal change names. -/
+inductive Key where
+  | replicas (d : String)
+  | restarted (d : String)
+  | image (d c : String)
+  | unsched (n : String)
+  | drained (n : String)
+deriving DecidableEq, Repr, Inhabited
+
+/-- The field a goal change names, if the field name is one of spec 01's. -/
+def Change.key (c : Change) : Option Key :=
+  if c.deployment != "" then
+    match c.field with
+    | "replicas" => some (.replicas c.deployment)
+    | "restarted" => some (.restarted c.deployment)
+    | "image" => some (.image c.deployment c.container)
+    | _ => none
+  else
+    match c.field with
+    | "unschedulable" => some (.unsched c.node)
+    | "drained" => some (.drained c.node)
+    | _ => none
+
 structure Plan where
   goal : List Change
   steps : List Step
