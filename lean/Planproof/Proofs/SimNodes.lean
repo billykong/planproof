@@ -63,7 +63,7 @@ theorem Sim.cordon {s : Snapshot} {st : State} {w w' : World} {stp : Step}
   have hstep : Spec.step w.fields stp = setField w.fields (.unsched stp.node) (.bool true) := by
     simp [Spec.step, hop]
   rw [happ]
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, hs.mu⟩
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, hs.mu, hs.names⟩
   · show Spec.step w.fields stp = _
     rw [hstep, hs.fields]
     exact (State.field_updNode_unsched st stp.node true).symm
@@ -189,7 +189,7 @@ theorem Sim.uncordon {s : Snapshot} {st : State} {w w' : World} {stp : Step} (hu
       intro p m hm; split
       · simp [upd, mem_sortStrings, hm]
       · exact hm
-    refine ⟨?_, ?_, ?_, ?_, ?_, ?_, hs.mu⟩
+    refine ⟨?_, ?_, ?_, ?_, ?_, ?_, hs.mu, hs.names⟩
     · show Spec.step w.fields stp = _
       rw [hstep, State.field_updPods]; exact hf1.symm
     · obtain ⟨al, hp, hf⟩ := hs.pods
@@ -265,7 +265,7 @@ theorem Sim.uncordon {s : Snapshot} {st : State} {w w' : World} {stp : Step} (hu
       rcases sched_uncordon s w.fields stp.node m (by rw [← hstep]; exact hm) with h | rfl
       · exact h
       · exact absurd hm hnot
-    refine ⟨?_, ?_, ?_, ?_, ?_, ?_, hs.mu⟩
+    refine ⟨?_, ?_, ?_, ?_, ?_, ?_, hs.mu, hs.names⟩
     · show Spec.step w.fields stp = _
       rw [hstep]; exact hf1.symm
     · obtain ⟨al, hp, hf⟩ := hs.pods

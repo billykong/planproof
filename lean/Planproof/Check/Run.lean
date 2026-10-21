@@ -198,8 +198,8 @@ def applyOp (st : State) (s : Step) : State × Bool :=
       { p with ready := false, created := true,
                nodes := compact (sortStrings (sched ++ p.nodes.filter (· != s.node))) }
     let st := st.updNode s.node fun n => { n with drained := true }
-    let (st, bad) := st.place moved
-    (st, bad.isNone)
+    let r := st.place moved
+    (r.1, r.2.isNone)
   | "scale" =>
     match st.dep? s.deployment with
     | none => (st, true)

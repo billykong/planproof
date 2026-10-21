@@ -176,6 +176,13 @@ theorem Sim.congr {s : Snapshot} {st st' : State} {w : World} (hs : Sim s st w) 
     have e := congrArg (fun x : MDep => x.maxUnavail) he
     simp only [MDep.strip] at e
     rw [← e]; exact hs.mu m hm
+  names := by
+    intro m' hm'
+    have : m'.strip ∈ st.deps.map MDep.strip := by rw [← h.deps]; exact List.mem_map_of_mem hm'
+    obtain ⟨m, hm, he⟩ := List.mem_map.mp this
+    have e := congrArg (fun x : MDep => x.name) he
+    simp only [MDep.strip] at e
+    rw [← e]; exact hs.names m hm
 
 /-! ## Bookkeeping steps -/
 
