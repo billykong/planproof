@@ -44,7 +44,7 @@ theorem nodes_newPods (st : State) (d : String) (k : Int) : (st.newPods d k).1.n
 theorem nodes_surgeFits (st : State) (d : String) (m : MDep) : (st.surgeFits d m).1.nodes = st.nodes := by
   unfold State.surgeFits; split
   · rfl
-  · simp only; rw [show ∀ x : State, (x.remove _).nodes = x.nodes from fun _ => rfl, State.nodes_place, nodes_newPods]
+  · exact nodes_newPods st d m.maxSurge
 
 theorem nodes_rollout (st : State) (s : Step) (m : MDep) : (st.rollout s m).1.nodes = st.nodes := by
   unfold State.rollout; simp only; rw [State.nodes_place, nodes_newPods]; rfl

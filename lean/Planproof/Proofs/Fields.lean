@@ -341,8 +341,10 @@ theorem State.field_surgeFits (st : State) (d : String) (m : MDep) : (st.surgeFi
   unfold State.surgeFits
   split
   · rfl
-  · simp only
-    rw [State.field_remove, State.field_place, State.field_newPods]
+  · exact (State.field_congr rfl rfl).trans (State.field_newPods st d m.maxSurge)
+
+theorem State.field_scaleDown (st : State) (d : String) (n : Int) : (st.scaleDown d n).field = st.field :=
+  State.field_congr rfl rfl
 
 theorem State.field_rollout (st : State) (s : Step) (m : MDep) :
     (st.rollout s m).1.field = (st.updDep s.deployment (rolloutUpdate s ((st.podsOf s.deployment).flatMap (·.nodes)))).field := by
@@ -376,8 +378,7 @@ theorem State.field_applyOp (st : State) (s : Step) (h : (applyOp st s).2 = true
       split
       · rw [State.field_place, State.field_newPods, State.field_updDep_replicas]
       · split
-        · simp only
-          rw [State.field_updPods, State.field_updPods, State.field_updDep_replicas]
+        · rw [State.field_scaleDown, State.field_updDep_replicas]
         · exact State.field_updDep_replicas st s.deployment _
   by_cases h5 : s.op = "set-image"
   · simp only [applyOp, h5] at h ⊢

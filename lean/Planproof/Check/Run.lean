@@ -132,14 +132,34 @@ def eachStateFails (c : Ctx) (st : State) : List String :=
 
 /-! ## Operations (spec 03) -/
 
+/-- Scale a deployment down to `n`: pods that aren't ready go first, then
+ready ones, each in list order (the Go kernel's stable sort); the rest may
+be anywhere any of its pods was. -/
+def State.scaleDown (st : State) (d : String) (n : Int) : State :=
+  let pods := st.podsOf d
+  let k := pods.length - n.toNat
+  let notReady := (pods.filter (!·.ready)).length
+  let wher := compact (sortStrings (pods.flatMap (·.nodes)))
+  -- Walk the pods with what is still to drop of each kind.
+  let step := fun (acc : List MPod × Nat × Nat) (p : MPod) =>
+    let (out, qn, qr) := acc
+    if p.dep == d && !p.gone then
+      if !p.ready && qn > 0 then (out ++ [{ p with gone := true, ready := false }], qn - 1, qr)
+      else if p.ready && qr > 0 then (out ++ [{ p with gone := true, ready := false }], qn, qr - 1)
+      else (out ++ [{ p with nodes := wher }], qn, qr)
+    else (out ++ [p], qn, qr)
+  let (pods', _, _) := st.pods.foldl step ([], min k notReady, k - min k notReady)
+  { st with pods := pods' }
+
 /-- A rolling update's surge pods must fit on top of the existing ones
 (none for `Recreate`). The surge pods are removed again. -/
 def State.surgeFits (st : State) (d : String) (m : MDep) : State × Bool :=
   if m.recreate then (st, true)
   else
-    let (st, surge) := st.newPods d m.maxSurge
-    let (st, b) := st.place surge
-    (st.remove surge, b.isNone)
+    let (st', surge) := st.newPods d m.maxSurge
+    let (_, b) := st'.place surge
+    -- Only the counter for new pod names changes; the surge pods go again.
+    ({ st' with pods := st.pods }, b.isNone)
 
 /-- What a set-image or rollout-restart does to the deployment itself;
 `old` is where its old pods may still be. -/
@@ -191,14 +211,7 @@ def applyOp (st : State) (s : Step) : State × Bool :=
         let (st, names) := st.newPods s.deployment (n - old)
         let (st, bad) := st.place names
         (st, bad.isNone)
-      else if n < old then
-        -- Pods that aren't ready go first; the rest may be anywhere they were.
-        let pods := (st.podsOf s.deployment).mergeSort fun a b => !a.ready || b.ready
-        let wher := compact (sortStrings (pods.flatMap (·.nodes)))
-        let drop := pods.take (pods.length - n.toNat) |>.map (·.name)
-        let keep := pods.drop (pods.length - n.toNat) |>.map (·.name)
-        let st := st.updPods (fun p => drop.contains p.name) fun p => { p with gone := true, ready := false }
-        (st.updPods (fun p => keep.contains p.name) fun p => { p with nodes := wher }, true)
+      else if n < old then (st.scaleDown s.deployment n, true)
       else (st, true)
   | "set-image" | "rollout-restart" =>
     match st.dep? s.deployment with
