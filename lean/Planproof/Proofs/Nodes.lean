@@ -36,7 +36,7 @@ theorem cordon_first_sound (snap : Snapshot) (plan : Plan) (pol : Policy)
 
 /-! ## Nodes keep their names and readiness -/
 
-def nodeKey (n : MNode) : String × Bool := (n.name, n.ready)
+def nodeKey (n : MNode) : String × Bool × Bool := (n.name, n.ready, n.taints)
 
 theorem nodes_newPods (st : State) (d : String) (k : Int) : (st.newPods d k).1.nodes = st.nodes := by
   unfold State.newPods; split <;> rfl
@@ -58,23 +58,24 @@ theorem nodes_wait (st : State) (ds : List String) :
   | cons d rest ih => simp only [List.foldl_cons]; rw [ih]; rfl
 
 theorem nodeKeys_updNode (st : State) (n : String) (f : MNode → MNode) (hn : ∀ x, (f x).name = x.name)
-    (hr : ∀ x, (f x).ready = x.ready) : (st.updNode n f).nodes.map nodeKey = st.nodes.map nodeKey := by
+    (hr : ∀ x, (f x).ready = x.ready) (ht : ∀ x, (f x).taints = x.taints) :
+    (st.updNode n f).nodes.map nodeKey = st.nodes.map nodeKey := by
   unfold State.updNode; simp only [List.map_map]
   apply List.map_congr_left
   intro x _
   simp only [Function.comp, nodeKey]
-  split <;> simp [hn, hr]
+  split <;> simp [hn, hr, ht]
 
 theorem nodeKeys_applyOp (st : State) (s : Step) : (applyOp st s).1.nodes.map nodeKey = st.nodes.map nodeKey := by
   by_cases h1 : s.op = "cordon"
-  · simp only [applyOp, h1]; exact nodeKeys_updNode _ _ _ (fun _ => rfl) (fun _ => rfl)
+  · simp only [applyOp, h1]; exact nodeKeys_updNode _ _ _ (fun _ => rfl) (fun _ => rfl) (fun _ => rfl)
   by_cases h2 : s.op = "uncordon"
   · simp only [applyOp, h2]
     split
-    · exact nodeKeys_updNode _ _ _ (fun _ => rfl) (fun _ => rfl)
-    · exact nodeKeys_updNode _ _ _ (fun _ => rfl) (fun _ => rfl)
+    · exact nodeKeys_updNode _ _ _ (fun _ => rfl) (fun _ => rfl) (fun _ => rfl)
+    · exact nodeKeys_updNode _ _ _ (fun _ => rfl) (fun _ => rfl) (fun _ => rfl)
   by_cases h3 : s.op = "drain"
-  · simp only [applyOp, h3]; rw [State.nodes_place]; exact nodeKeys_updNode _ _ _ (fun _ => rfl) (fun _ => rfl)
+  · simp only [applyOp, h3]; rw [State.nodes_place]; exact nodeKeys_updNode _ _ _ (fun _ => rfl) (fun _ => rfl) (fun _ => rfl)
   by_cases h4 : s.op = "scale"
   · simp only [applyOp, h4]
     cases st.dep? s.deployment with
@@ -115,7 +116,7 @@ theorem nodeKeys_runOps (st : State) (steps : List Step) : (runOps st steps).nod
   | nil => rfl
   | cons s rest ih => exact (ih _).trans (nodeKeys_applyOp st s)
 
-theorem nodeKeys_build (snap : Snapshot) : (build snap).nodes.map nodeKey = snap.nodes.map fun n => (n.name, n.ready) := by
+theorem nodeKeys_build (snap : Snapshot) : (build snap).nodes.map nodeKey = snap.nodes.map fun n => (n.name, n.ready, n.taints) := by
   unfold build
   simp only
   generalize hst0 : ({ deps := _, nodes := _, pods := _, pdbs := [] } : State) = st0
@@ -163,7 +164,7 @@ theorem length_filter_comp {α β : Type} (l : List α) (k : α → β) (p : β 
 
 /-- The spec's counts are the checker's, for a state whose nodes are the
 snapshot's nodes, by name and readiness, with unique names. -/
-theorem counts_eq (snap : Snapshot) (st : State) (hk : st.nodes.map nodeKey = snap.nodes.map fun n => (n.name, n.ready))
+theorem counts_eq (snap : Snapshot) (st : State) (hk : st.nodes.map nodeKey = snap.nodes.map fun n => (n.name, n.ready, n.taints))
     (hu : NodesUnique snap) :
     (unschedCount snap st.field : Int) = st.nodeCounts.1 ∧ (schedCount snap st.field : Int) = st.nodeCounts.2 := by
   have hnd : (st.nodes.map (·.name)).Nodup := by
@@ -172,11 +173,11 @@ theorem counts_eq (snap : Snapshot) (st : State) (hk : st.nodes.map nodeKey = sn
       rw [List.map_map, List.map_map] at this
       exact this
     rw [this]; exact hu
-  let P : String × Bool → Bool := fun p => ((st.nodes.find? (·.name == p.1)).map fun m => Value.bool m.unsched) == some (.bool true)
-  let Q : String × Bool → Bool := fun p => p.2 && ((st.nodes.find? (·.name == p.1)).map fun m => Value.bool m.unsched) == some (.bool false)
-  have e1 : unschedCount snap st.field = ((snap.nodes.map fun n => (n.name, n.ready)).filter P).length := by
+  let P : String × Bool × Bool → Bool := fun p => ((st.nodes.find? (·.name == p.1)).map fun m => Value.bool m.unsched) == some (.bool true)
+  let Q : String × Bool × Bool → Bool := fun p => p.2.1 && ((st.nodes.find? (·.name == p.1)).map fun m => Value.bool m.unsched) == some (.bool false)
+  have e1 : unschedCount snap st.field = ((snap.nodes.map fun n => (n.name, n.ready, n.taints)).filter P).length := by
     unfold unschedCount; rw [← length_filter_comp]; rfl
-  have e2 : schedCount snap st.field = ((snap.nodes.map fun n => (n.name, n.ready)).filter Q).length := by
+  have e2 : schedCount snap st.field = ((snap.nodes.map fun n => (n.name, n.ready, n.taints)).filter Q).length := by
     unfold schedCount; rw [← length_filter_comp]; rfl
   rw [e1, e2, ← hk, ← length_filter_comp, ← length_filter_comp]
   unfold State.nodeCounts
