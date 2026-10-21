@@ -2,7 +2,7 @@
 
 **Goal:** turn "the checker is small and well tested" into "for the core rules, the checker is proved correct against a precise model". A Lean 4 model of the semantics, a checker written in Lean with theorems that a Proved verdict implies the core rules hold, and differential tests that the Go kernel gives the same verdicts as the Lean checker. Covers goals G1 and G2. The approach copies AWS's Cedar: a model in Lean, proofs about the model, and differential testing of the production code against it ([prior art](../../prior-art.md#4-language-models-with-a-verifier)).
 
-Status: **Planned** (phase 5). Decided 2026-10-17: prove the core rules first (frame, budget, never-zero, cordon-first, limits, and capacity through a checked placement), with the model and differential tests covering every rule; core Lean only, no Mathlib.
+Status: **In progress** (phase 5). Milestone 1 (toolchain, CI) done 2026-10-21. Decided 2026-10-17: prove the core rules first (frame, budget, never-zero, cordon-first, limits, and capacity through a checked placement), with the model and differential tests covering every rule; core Lean only, no Mathlib.
 
 ## What a proof adds, and what it doesn't
 
@@ -46,9 +46,9 @@ Tests try examples; a proof covers every possible plan, snapshot and policy with
 
 | ID | Requirement | Priority | Status |
 | --- | --- | --- | --- |
-| L-01 | A Lake project in `lean/`, toolchain pinned in `lean-toolchain`, depending on core Lean only. `make lean` builds it and checks every proof. | Must | Planned |
-| L-02 | CI installs the pinned toolchain, runs `make lean`, and fails on `sorry`, a new `axiom`, `native_decide` or `implemented_by` in `Spec/` or `Proofs/`, and on any axiom beyond `propext`, `Classical.choice` and `Quot.sound` in `#print axioms` of the main theorem. | Must | Planned |
-| L-03 | `Spec/` is at most 600 non-blank, non-comment lines, counted in CI: small enough for a reviewer to read in one sitting. | Should | Planned |
+| L-01 | A Lake project in `lean/`, toolchain pinned in `lean-toolchain`, depending on core Lean only. `make lean` builds it and checks every proof. | Must | **Done** (2026-10-21): `lean/`, Lean v4.34.1 (the stable release before the newest, out about four weeks), `make lean` |
+| L-02 | CI installs the pinned toolchain, runs `make lean`, and fails on `sorry`, a new `axiom`, `native_decide` or `implemented_by` in `Spec/` or `Proofs/`, and on any axiom beyond `propext`, `Classical.choice` and `Quot.sound` in `#print axioms` of the main theorem. | Must | **Done** (2026-10-21): the `lean` job in CI runs `make lean`; [scripts/lean-check.sh](../../../scripts/lean-check.sh) fails on the escape hatches anywhere in `lean/Planproof` (tested with a planted `sorry`) and checks the axioms of each theorem in `lean/theorems.txt` |
+| L-03 | `Spec/` is at most 600 non-blank, non-comment lines, counted in CI: small enough for a reviewer to read in one sitting. | Should | **Partial**: counted by `scripts/lean-check.sh` once `Spec/` exists |
 
 ### Specification
 

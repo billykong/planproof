@@ -22,3 +22,14 @@ jobs:
         go-version-file: go.mod
     - run: make fmt-check vet test budget cover examples results-check
     - run: make fuzz FUZZTIME=60s
+  lean:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+    - uses: actions/checkout@v5
+    - name: Install elan (the toolchain comes from lean/lean-toolchain)
+      run: |
+        curl -sSfL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -o elan-init.sh
+        sh elan-init.sh -y --no-modify-path --default-toolchain none
+        echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+    - run: make lean

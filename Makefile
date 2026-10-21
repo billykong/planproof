@@ -12,7 +12,7 @@ CLUSTER    := planproof
 KCFG       := $(CURDIR)/.kube/$(CLUSTER)
 KUBECTL    := kubectl --kubeconfig $(KCFG) --context kind-$(CLUSTER)
 
-.PHONY: ci fmt-check vet test budget fuzz cover build examples kind-up kind-down kind-test safeops-compare results results-check
+.PHONY: ci fmt-check vet test budget fuzz cover build examples kind-up kind-down kind-test safeops-compare results results-check lean
 
 ## ci: everything CI runs on a pull request
 ci: fmt-check vet test budget cover examples results-check fuzz
@@ -107,3 +107,11 @@ results:
 	go run ./cmd/planproof-eval review-summary $(REVIEWS) > results/review-proxy.md
 results-check: results
 	@git diff --exit-code -- results/ || { echo "results/ differs from what the commands write: run make results and commit"; exit 1; }
+
+## lean: build the Lean model, checker and proofs, and check them for escape
+## hatches, the Spec size budget and axioms (PRD L-01 to L-03). Needs elan:
+## the toolchain is pinned in lean/lean-toolchain.
+export PATH := $(HOME)/.elan/bin:$(PATH)
+lean:
+	cd lean && lake build
+	./scripts/lean-check.sh

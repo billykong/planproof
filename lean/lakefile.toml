@@ -1,0 +1,15 @@
+# planproof's Lean model, checker and proofs (PRD area L). Core Lean only:
+# no Mathlib or other dependencies (L-01).
+name = "planproof"
+version = "0.1.0"
+defaultTargets = ["Planproof", "planproof-lean"]
+
+[leanOptions]
+autoImplicit = false
+
+[[lean_lib]]
+name = "Planproof"
+
+[[lean_exe]]
+name = "planproof-lean"
+root = "Main"
