@@ -8,7 +8,7 @@ import (
 )
 
 // KernelVersion is recorded in every verdict; the executor checks it (SEC-05).
-const KernelVersion = "0.4.0"
+const KernelVersion = "0.5.0"
 
 type Result string
 

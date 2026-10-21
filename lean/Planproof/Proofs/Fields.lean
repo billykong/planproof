@@ -357,7 +357,10 @@ theorem State.field_applyOp (st : State) (s : Step) (h : (applyOp st s).2 = true
   by_cases h1 : s.op = "cordon"
   · simp only [applyOp, Spec.step, h1]; exact State.field_updNode_unsched st s.node true
   by_cases h2 : s.op = "uncordon"
-  · simp only [applyOp, Spec.step, h2]; exact State.field_updNode_unsched st s.node false
+  · simp only [applyOp, Spec.step, h2]
+    split
+    · rw [State.field_updPods]; exact State.field_updNode_unsched st s.node false
+    · exact State.field_updNode_unsched st s.node false
   by_cases h3 : s.op = "drain"
   · simp only [applyOp, Spec.step, h3]
     rw [State.field_place, State.field_updNode_drained, State.field_updPods]

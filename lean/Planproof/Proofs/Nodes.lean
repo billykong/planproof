@@ -69,7 +69,10 @@ theorem nodeKeys_applyOp (st : State) (s : Step) : (applyOp st s).1.nodes.map no
   by_cases h1 : s.op = "cordon"
   · simp only [applyOp, h1]; exact nodeKeys_updNode _ _ _ (fun _ => rfl) (fun _ => rfl)
   by_cases h2 : s.op = "uncordon"
-  · simp only [applyOp, h2]; exact nodeKeys_updNode _ _ _ (fun _ => rfl) (fun _ => rfl)
+  · simp only [applyOp, h2]
+    split
+    · exact nodeKeys_updNode _ _ _ (fun _ => rfl) (fun _ => rfl)
+    · exact nodeKeys_updNode _ _ _ (fun _ => rfl) (fun _ => rfl)
   by_cases h3 : s.op = "drain"
   · simp only [applyOp, h3]; rw [State.nodes_place]; exact nodeKeys_updNode _ _ _ (fun _ => rfl) (fun _ => rfl)
   by_cases h4 : s.op = "scale"

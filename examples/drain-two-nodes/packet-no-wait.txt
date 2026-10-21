@@ -1,5 +1,5 @@
 PLAN CHECK: `drain-two-nodes-no-wait`
-Plan sha256:c0f7a397fe0e. Snapshot sha256:01d582c7f8de. Policy sha256:7df1f0660a8b. Kernel 0.4.0.
+Plan sha256:c0f7a397fe0e. Snapshot sha256:01d582c7f8de. Policy sha256:7df1f0660a8b. Kernel 0.5.0.
 
 CAUTION: DO NOT APPROVE THIS PLAN.
 During step 4, no `shop/cart` pods are ready. The disruption budget for `shop/cart` needs at least 1.

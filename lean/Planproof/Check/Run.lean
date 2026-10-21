@@ -161,7 +161,13 @@ found a place (rule `capacity`). -/
 def applyOp (st : State) (s : Step) : State × Bool :=
   match s.op with
   | "cordon" => (st.updNode s.node fun n => { n with unsched := true }, true)
-  | "uncordon" => (st.updNode s.node fun n => { n with unsched := false }, true)
+  | "uncordon" =>
+    let st := st.updNode s.node fun n => { n with unsched := false }
+    -- A pod still pending may be scheduled onto it (kernel 0.5.0).
+    if (st.node? s.node).any fun n => n.ready && !n.taints then
+      (st.updPods (fun p => p.created && !p.ready && !p.gone && !p.nodes.contains s.node)
+        fun p => { p with nodes := sortStrings (p.nodes ++ [s.node]) }, true)
+    else (st, true)
   | "drain" =>
     let sched := st.schedulable
     let moved := (st.pods.filter fun p => p.dep != "" && p.mightBeOn s.node).map (·.name)

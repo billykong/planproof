@@ -266,6 +266,42 @@ steps:
   - {op: drain, node: n1}
   - {op: wait, deployments: [shop/cart, shop/checkout], timeoutSeconds: 300}
 `, oldDigest, newDigest, newDigest), Want: "Unknown", Trigger: "overlapping-change"},
+	// Found while writing the Lean proof (kernel 0.5.0): a pod still pending may be
+	// scheduled onto a node that becomes schedulable while it waits. The new
+	// cart pod may land on n1 once it's uncordoned, be ready there, and be
+	// evicted by the n1 drain; the n2 drain then takes cart-b. Until 0.4.0 the
+	// model kept its candidates to the nodes schedulable when it was made.
+	{Name: "never-zero: a pending pod may land on a node uncordoned while it waits", Snap: func(m map[string]any) {
+		Named(m, "nodes", "n1")["unschedulable"] = true
+		Named(m, "nodes", "n2")["unschedulable"] = true
+		var pods []any
+		for _, p := range m["pods"].([]any) {
+			p := p.(map[string]any)
+			switch p["name"] {
+			case "cart-a":
+				continue
+			case "checkout-a", "checkout-b":
+				p["node"] = "n4"
+			}
+			pods = append(pods, p)
+		}
+		m["pods"], m["pdbs"] = pods, m["pdbs"].([]any)[1:]
+		d := Named(m, "deployments", "cart")
+		d["replicas"], d["readyReplicas"], d["updatedReplicas"] = 1, 1, 1
+	}, Plan: `
+goal:
+  - {deployment: shop/cart, field: replicas, from: 1, to: 2}
+  - {node: n1, field: drained, from: false, to: true}
+  - {node: n2, field: drained, from: false, to: true}
+steps:
+  - {op: scale, deployment: shop/cart, replicas: 2}
+  - {op: uncordon, node: n1}
+  - {op: wait, deployments: [shop/cart], timeoutSeconds: 300}
+  - {op: cordon, node: n1}
+  - {op: drain, node: n1}
+  - {op: drain, node: n2}
+  - {op: wait, deployments: [shop/cart, shop/checkout, shop/payments], timeoutSeconds: 300}
+`, Want: "Refuted", Rule: "never-zero"},
 	{Name: "never-zero: Recreate strategy", Snap: func(m map[string]any) {
 		Named(m, "deployments", "cart")["strategy"].(map[string]any)["type"] = "Recreate"
 		m["pdbs"] = m["pdbs"].([]any)[1:]

@@ -187,7 +187,16 @@ func (r *run) apply(ref StepRef, s Step) bool {
 	st, plan := r.st, !r.rollback
 	switch s.Op {
 	case "cordon", "uncordon":
-		st.nodes[s.Node].unsched = s.Op == "cordon"
+		n := st.nodes[s.Node]
+		n.unsched = s.Op == "cordon"
+		if s.Op == "uncordon" && n.ready && !n.taints {
+			// A pod still pending may be scheduled onto it (kernel 0.5.0).
+			for _, p := range st.pods {
+				if p.created && !p.ready && !p.gone && !slices.Contains(p.nodes, s.Node) {
+					p.nodes = slices.Sorted(slices.Values(append(slices.Clone(p.nodes), s.Node)))
+				}
+			}
+		}
 	case "drain":
 		var moved []*mpod
 		sched := st.schedulable()
