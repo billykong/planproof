@@ -29,18 +29,18 @@ def initial (s : Snapshot) : Fields
   | .drained n => (s.nodes.find? (·.name == n)).map fun _ => .bool false
 
 /-- Set a field of an object that exists; a missing object stays missing. -/
-def set (f : Fields) (k : Key) (v : Value) : Fields :=
+def setField (f : Fields) (k : Key) (v : Value) : Fields :=
   fun k' => if k' = k then (f k).map fun _ => v else f k'
 
 /-- What each operation does to the fields (spec 03). `wait` changes none. -/
 def step (f : Fields) (s : Step) : Fields :=
   match s.op with
-  | "cordon" => set f (.unsched s.node) (.bool true)
-  | "uncordon" => set f (.unsched s.node) (.bool false)
-  | "drain" => set f (.drained s.node) (.bool true)
-  | "scale" => set f (.replicas s.deployment) (.int (s.replicas.getD 0))
-  | "set-image" => set f (.image s.deployment s.container) (.str s.image)
-  | "rollout-restart" => set f (.restarted s.deployment) (.bool true)
+  | "cordon" => setField f (.unsched s.node) (.bool true)
+  | "uncordon" => setField f (.unsched s.node) (.bool false)
+  | "drain" => setField f (.drained s.node) (.bool true)
+  | "scale" => setField f (.replicas s.deployment) (.int (s.replicas.getD 0))
+  | "set-image" => setField f (.image s.deployment s.container) (.str s.image)
+  | "rollout-restart" => setField f (.restarted s.deployment) (.bool true)
   | _ => f
 
 /-- The fields after running some steps from the snapshot. -/

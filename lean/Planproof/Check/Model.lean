@@ -79,6 +79,10 @@ def compact : List String → List String
   | a :: b :: rest => if a == b then compact (b :: rest) else a :: compact (b :: rest)
   | xs => xs
 
+/-- Set the image of container `c` in a deployment's container list. -/
+def setImage (c img : String) (l : List (String × String)) : List (String × String) :=
+  l.map fun p => if p.1 == c then (p.1, img) else p
+
 namespace State
 
 def dep? (st : State) (d : String) : Option MDep := st.deps.find? (·.name == d)

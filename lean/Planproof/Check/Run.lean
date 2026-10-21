@@ -128,6 +128,28 @@ def eachStateFails (c : Ctx) (st : State) : List String :=
 
 /-! ## Operations (spec 03) -/
 
+/-- A rolling update's surge pods must fit on top of the existing ones
+(none for `Recreate`). The surge pods are removed again. -/
+def State.surgeFits (st : State) (d : String) (m : MDep) : State × Bool :=
+  if m.recreate then (st, true)
+  else
+    let (st, surge) := st.newPods d m.maxSurge
+    let (st, b) := st.place surge
+    (st.remove surge, b.isNone)
+
+/-- What a set-image or rollout-restart does to the deployment itself. -/
+def rolloutUpdate (s : Step) (d : MDep) : MDep :=
+  if s.op == "set-image" then { d with rolling := true, images := setImage s.container s.image d.images }
+  else { d with rolling := true, restarted := true }
+
+/-- The rollout: the old pods go, new pending pods replace them. -/
+def State.rollout (st : State) (s : Step) (m : MDep) : State × Bool :=
+  let st := st.remove ((st.podsOf s.deployment).map (·.name))
+  let st := st.updDep s.deployment (rolloutUpdate s)
+  let (st, names) := st.newPods s.deployment m.replicas
+  let (st, bad) := st.place names
+  (st, bad.isNone)
+
 /-- The state after an operation, and whether every pod it created or moved
 found a place (rule `capacity`). -/
 def applyOp (st : State) (s : Step) : State × Bool :=
@@ -170,24 +192,8 @@ def applyOp (st : State) (s : Step) : State × Bool :=
     | none => (st, true)
     | some m =>
       let floor := if m.recreate then 0 else max 0 (min (st.avail s.deployment) (m.replicas - m.maxUnavail))
-      let st := st.updDep s.deployment fun d => { d with floor }
-      -- Surge pods must fit on top of the existing ones.
-      let (st, bad) :=
-        if m.recreate then (st, false)
-        else
-          let (st, surge) := st.newPods s.deployment m.maxSurge
-          let (st, b) := st.place surge
-          (st.remove surge, b.isSome)
-      if bad then (st, false)
-      else
-        let st := st.remove ((st.podsOf s.deployment).map (·.name))
-        let st := st.updDep s.deployment fun d =>
-          if s.op == "set-image" then
-            { d with rolling := true, images := d.images.map fun (c, i) => if c == s.container then (c, s.image) else (c, i) }
-          else { d with rolling := true, restarted := true }
-        let (st, names) := st.newPods s.deployment m.replicas
-        let (st, bad) := st.place names
-        (st, bad.isNone)
+      let (st, ok) := (st.updDep s.deployment fun d => { d with floor }).surgeFits s.deployment m
+      if ok then st.rollout s m else (st, false)
   | "wait" =>
     (s.deployments.foldl (init := st) fun st d =>
       let st := st.updDep d fun x => { x with rolling := false }
