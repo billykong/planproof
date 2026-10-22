@@ -15,3 +15,4 @@ import Planproof.Proofs.SimNodes
 import Planproof.Proofs.SimDrain
 import Planproof.Proofs.SimScale
 import Planproof.Proofs.SimRollout
+import Planproof.Proofs.SimWait
