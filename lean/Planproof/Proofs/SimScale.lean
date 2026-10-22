@@ -246,7 +246,7 @@ theorem Sim.setReplicas {s : Snapshot} {st : State} {w : World} (hs : Sim s st w
     Sim s (st.updDep d fun x => { x with replicas := n }) { w with fields := setField w.fields (.replicas d) (.int n) } := by
   have hrep : ∀ e, e ≠ d → replicasOf (setField w.fields (.replicas d) (.int n)) e = replicasOf w.fields e :=
     fun e he => replicasOf_setField_other w.fields d e _ he
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · show setField w.fields _ _ = _
     rw [hs.fields, State.field_updDep_replicas]
   · obtain ⟨al, hp, hf⟩ := hs.pods
@@ -282,6 +282,9 @@ theorem Sim.setReplicas {s : Snapshot} {st : State} {w : World} (hs : Sim s st w
     simp only [State.updDep, List.mem_map] at hm
     obtain ⟨x, hx, rfl⟩ := hm
     split <;> exact hs.names x hx
+  · intro e
+    rw [← hs.stat e]
+    exact dep?_map_stat st _ (fun x => by split <;> rfl) (fun x => by split <;> rfl) e
 
 /-- Adding pending pods of a deployment that isn't mid rollout, on both sides. -/
 theorem Sim.addPending {s : Snapshot} {st : State} {w : World} (hu : NodesUnique s) (hs : Sim s st w)
@@ -299,7 +302,7 @@ theorem Sim.addPending {s : Snapshot} {st : State} {w : World} (hu : NodesUnique
     obtain ⟨hd, -, -, -, hg⟩ := hP p hp
     have : ({ st with pods := st.pods ++ P } : State).rolling p.dep = false := by rw [hd]; exact hroll
     simp [hg, this]
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, hs.mu, hs.names⟩
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, hs.mu, hs.names, hs.stat⟩
   · show w.fields = _
     rw [hs.fields]; exact (State.field_congr rfl rfl).symm
   · obtain ⟨al, hp, hf⟩ := hs.pods
@@ -437,7 +440,7 @@ theorem Sim.scaleDown {s : Snapshot} {st : State} {w w' : World} (hs : Sim s st 
     have hd' : drop.filter (·.dep == d) = drop := List.filter_eq_self.mpr (fun p hp => by simp [hdrop p hp])
     rw [hd'] at this
     omega
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, hs.mu, hs.names⟩
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, hs.mu, hs.names, hs.stat⟩
   · show w.fields = _
     rw [hs.fields]; exact (State.field_congr rfl rfl).symm
   · -- The pairing after.

@@ -128,7 +128,7 @@ theorem Sim.drain {s : Snapshot} {st : State} {w w' : World} {stp : Step} (hu : 
           simp [State.rolling, hd, this] at hr
   have hsel_roll : ∀ p ∈ st.pods, p.gone = false → st.rolling p.dep = true → sel p = false := by
     intro p hp hg hr; simp [sel, hnoroll p hp hg hr]
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, hs.stat⟩
   · show Spec.step w.fields stp = _
     rw [hstep, hs.fields]
     show _ = (st1.updNode stp.node fun n => { n with drained := true }).field

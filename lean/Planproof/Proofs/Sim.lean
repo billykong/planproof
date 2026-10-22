@@ -45,6 +45,8 @@ structure Sim (s : Snapshot) (st : State) (w : World) : Prop where
   nodes : st.nodes.map nodeKey = s.nodes.map fun n => (n.name, n.ready, n.taints)
   mu : ∀ m ∈ st.deps, 0 ≤ m.maxUnavail
   names : ∀ m ∈ st.deps, m.name ≠ ""
+  stat : ∀ d, (st.dep? d).map (fun m => (m.recreate, m.maxUnavail)) =
+    (deployment? s d).map (fun sd => (sd.recreate, sd.maxUnavail))
 
 /-! ## Schedulable nodes, two ways -/
 
@@ -249,6 +251,54 @@ theorem build_names (snap : Snapshot) : ∀ m ∈ (build snap).deps, ∃ d ∈ s
         split <;> exact this
       · exact hst
 
+def depStat (m : MDep) : Bool × Int := (m.recreate, m.maxUnavail)
+
+theorem dep?_map_stat (st : State) (g : MDep → MDep) (hn : ∀ x, (g x).name = x.name)
+    (hp : ∀ x, depStat (g x) = depStat x) (d : String) :
+    (({ st with deps := st.deps.map g } : State).dep? d).map depStat = (st.dep? d).map depStat := by
+  unfold State.dep?
+  simp only
+  rw [find?_map_same _ _ _ (fun x => by simp [hn])]
+  cases st.deps.find? (·.name == d) <;> simp [hp]
+
+theorem build_stat (snap : Snapshot) (d : String) :
+    ((build snap).dep? d).map depStat = (deployment? snap d).map fun sd => (sd.recreate, sd.maxUnavail) := by
+  unfold build
+  simp only
+  generalize hst0 : ({ deps := _, nodes := _, pods := _, pdbs := [] } : State) = st0
+  have h0 : (st0.dep? d).map depStat = (deployment? snap d).map fun sd => (sd.recreate, sd.maxUnavail) := by
+    subst hst0
+    simp only [State.dep?, deployment?, List.find?_map, Option.map_map]
+    rfl
+  suffices h : ∀ st : State, (st.dep? d).map depStat = (deployment? snap d).map (fun sd => (sd.recreate, sd.maxUnavail)) →
+      ((snap.pdbs.foldl (init := st) fun st b =>
+        match b.deployment with
+        | none => { st with deps := st.deps.map fun d =>
+            if (d.name.splitOn "/").head? == some b.ns then { d with unresolved := true } else d }
+        | some dn =>
+          if (st.dep? (b.ns ++ "/" ++ dn)).isSome then
+            let st := st.updDep (b.ns ++ "/" ++ dn) fun d => { d with pdbs := d.pdbs + 1, unresolved := d.unresolved || decide (d.pdbs + 1 > 1) }
+            { st with pdbs := st.pdbs ++ [{ name := b.ns ++ "/" ++ b.name, dep := b.ns ++ "/" ++ dn, min := b.min, max := b.max }] }
+          else st).dep? d).map depStat = (deployment? snap d).map fun sd => (sd.recreate, sd.maxUnavail) from by
+    have := h st0 h0
+    exact this
+  intro st hst
+  induction snap.pdbs generalizing st with
+  | nil => exact hst
+  | cons b rest ih =>
+    simp only [List.foldl_cons]
+    apply ih
+    cases b.deployment with
+    | none =>
+      rw [← hst]
+      exact dep?_map_stat st _ (fun x => by split <;> rfl) (fun x => by split <;> rfl) d
+    | some dn =>
+      simp only
+      split
+      · rw [← hst]
+        exact dep?_map_stat st _ (fun x => by split <;> rfl) (fun x => by split <;> rfl) d
+      · exact hst
+
 theorem sim_initial (snap : Snapshot) (hv : Valid snap) : Sim snap (build snap) (World.initial snap) where
   fields := (State.field_build snap).symm
   pods := by
@@ -285,6 +335,7 @@ theorem sim_initial (snap : Snapshot) (hv : Valid snap) : Sim snap (build snap) 
     intro h0
     have := congrArg String.length h0
     simp at this
+  stat := fun d => build_stat snap d
 
 /-! ## Availability -/
 
@@ -358,7 +409,7 @@ theorem match_settle {s : Snapshot} {f : Fields} {p : MPod} {q q' : CPod} (hm : 
 theorem Sim.settle {s : Snapshot} {st : State} {w w' : World} (hs : Sim s st w) (he : Settles s w w') : Sim s st w' := by
   obtain ⟨hf, hr, hp⟩ := he
   refine ⟨hf ▸ hs.fields, ?_, fun d => by rw [← hs.rollIff d]; simp [World.rollout?, hr],
-    fun d r h => by rw [hf]; exact hs.roll d r (by simpa [World.rollout?, hr] using h), hs.owner, hs.nodes, hs.mu, hs.names⟩
+    fun d r h => by rw [hf]; exact hs.roll d r (by simpa [World.rollout?, hr] using h), hs.owner, hs.nodes, hs.mu, hs.names, hs.stat⟩
   obtain ⟨al, hal, hm⟩ := hs.pods
   obtain ⟨al', hal', he'⟩ := hp.perm_left hal.symm
   refine ⟨al', hal', ?_⟩

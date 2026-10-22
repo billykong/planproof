@@ -183,6 +183,11 @@ theorem Sim.congr {s : Snapshot} {st st' : State} {w : World} (hs : Sim s st w) 
     have e := congrArg (fun x : MDep => x.name) he
     simp only [MDep.strip] at e
     rw [← e]; exact hs.names m hm
+  stat := by
+    intro d
+    have h1 := congrArg (Option.map fun m : MDep => (m.recreate, m.maxUnavail)) (dep?_strip h.deps d)
+    simp only [Option.map_map, Function.comp_def, MDep.strip] at h1
+    rw [h1]; exact hs.stat d
 
 /-! ## Bookkeeping steps -/
 

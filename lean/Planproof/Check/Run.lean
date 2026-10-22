@@ -172,11 +172,11 @@ def rolloutUpdate (s : Step) (old : List String) (d : MDep) : MDep :=
 /-- The rollout: the old pods go, new pending pods replace them. -/
 def State.rollout (st : State) (s : Step) (m : MDep) : State × Bool :=
   let old := (st.podsOf s.deployment).flatMap (·.nodes)
-  let st := st.remove ((st.podsOf s.deployment).map (·.name))
+  let st := { st with pods := st.pods.filter fun p => !(p.dep == s.deployment && !p.gone) }
   let st := st.updDep s.deployment (rolloutUpdate s old)
-  let (st, names) := st.newPods s.deployment m.replicas
-  let (st, bad) := st.place names
-  (st, bad.isNone)
+  let r := st.newPods s.deployment m.replicas
+  let r2 := r.1.place r.2
+  (r2.1, r2.2.isNone)
 
 /-- The state after an operation, and whether every pod it created or moved
 found a place (rule `capacity`). -/
