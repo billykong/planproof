@@ -210,9 +210,9 @@ def applyOp (st : State) (s : Step) : State × Bool :=
       let old := m.replicas
       let st := st.updDep s.deployment fun d => { d with replicas := n }
       if n > old then
-        let (st, names) := st.newPods s.deployment (n - old)
-        let (st, bad) := st.place names
-        (st, bad.isNone)
+        let r := st.newPods s.deployment (n - old)
+        let r2 := r.1.place r.2
+        (r2.1, r2.2.isNone)
       else if n < old then (st.scaleDown s.deployment n, true)
       else (st, true)
   | "set-image" | "rollout-restart" =>

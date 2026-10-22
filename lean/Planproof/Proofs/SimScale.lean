@@ -592,4 +592,83 @@ theorem Sim.scaleDown {s : Snapshot} {st : State} {w w' : World} (hs : Sim s st 
     · exact hs.owner a0 ha0 hd
   · exact hs.nodes
 
+/-! ## The scale step -/
+
+theorem trigger_dep_none {st : State} {stp : Step} (hop : stp.op = "scale" ∨ stp.op = "set-image" ∨ stp.op = "rollout-restart")
+    (h : trigger st stp = none) : depTrigger st stp.deployment = none := by
+  unfold trigger at h
+  have h1 : (["cordon", "uncordon", "drain"].contains stp.op) = false := by
+    rcases hop with h | h | h <;> simp [h]
+  have h2 : (stp.op == "drain") = false := by rcases hop with h | h | h <;> simp [h]
+  have h3 : (["scale", "set-image", "rollout-restart"].contains stp.op) = true := by
+    rcases hop with h | h | h <;> simp [h]
+  simp only [h1, Bool.false_and, Bool.false_eq_true, ite_false, h2, h3, ite_true] at h
+  cases hd : depTrigger st stp.deployment with
+  | none => rfl
+  | some t => rw [hd] at h; cases h
+
+theorem Sim.rolling_false {st : State} {d : String} {m : MDep} (hm : st.dep? d = some m) (hdt : depTrigger st d = none) :
+    st.rolling d = false := by
+  simp [State.rolling, hm, depTrigger_none_rolling hdt hm]
+
+theorem World.ext' {a b : World} (h1 : a.fields = b.fields) (h2 : a.pods = b.pods) (h3 : a.rollouts = b.rollouts) :
+    a = b := by
+  cases a; cases b; simp_all
+
+theorem Sim.scale {s : Snapshot} {st : State} {w w' : World} {stp : Step} (hu : NodesUnique s)
+    (hs : Sim s st w) (hop : stp.op = "scale") (hex : (st.dep? stp.deployment).isSome)
+    (htr : trigger st stp = none) (hn : Next s w stp w') : Sim s (applyOp st stp).1 w' := by
+  obtain ⟨m, hm⟩ := Option.isSome_iff_exists.mp hex
+  have hdt := trigger_dep_none (Or.inl hop) htr
+  have hroll := Sim.rolling_false hm hdt
+  have hdne : stp.deployment ≠ "" := by
+    rw [← State.name_of_dep? hm]; exact hs.names m (List.mem_of_find?_eq_some hm)
+  simp only [Next, hop] at hn
+  obtain ⟨hfw, hsn⟩ := hn
+  have hstep : Spec.step w.fields stp = setField w.fields (.replicas stp.deployment) (.int (stp.replicas.getD 0)) := by simp only [Spec.step, hop]
+  have hro : w.rollout? stp.deployment = none := by
+    have := hs.rollIff stp.deployment; rw [hroll] at this
+    cases h : w.rollout? stp.deployment with
+    | none => rfl
+    | some _ => rw [h] at this; cases this
+  have hr : replicasOf w.fields stp.deployment = m.replicas := by
+    simp [replicasOf, hs.fields, State.field, hm]
+  unfold ScaleNext at hsn
+  rw [hro] at hsn
+  simp only [hr] at hsn
+  obtain ⟨hro', hsn⟩ := hsn
+  have hs1 := hs.setReplicas stp.deployment (stp.replicas.getD 0) hroll
+  have hm1 : (st.updDep stp.deployment fun x => { x with replicas := (stp.replicas.getD 0) }).dep? stp.deployment = some { m with replicas := (stp.replicas.getD 0) } := by
+    rw [State.dep?_updDep st stp.deployment stp.deployment (fun x => { x with replicas := (stp.replicas.getD 0) }) (fun _ => rfl), hm]
+    simp [State.name_of_dep? hm]
+  have hroll1 : (st.updDep stp.deployment fun x => { x with replicas := (stp.replicas.getD 0) }).rolling stp.deployment = false := by
+    rw [State.rolling_updDep st stp.deployment stp.deployment (fun x => { x with replicas := (stp.replicas.getD 0) }) (fun _ => rfl) (fun _ => rfl)]; exact hroll
+  have happ : applyOp st stp = (if (stp.replicas.getD 0) > m.replicas then
+        let r := (st.updDep stp.deployment fun x => { x with replicas := (stp.replicas.getD 0) }).newPods stp.deployment ((stp.replicas.getD 0) - m.replicas)
+        let r2 := r.1.place r.2
+        (r2.1, r2.2.isNone)
+      else if (stp.replicas.getD 0) < m.replicas then ((st.updDep stp.deployment fun x => { x with replicas := (stp.replicas.getD 0) }).scaleDown stp.deployment (stp.replicas.getD 0), true)
+      else (st.updDep stp.deployment fun x => { x with replicas := (stp.replicas.getD 0) }, true)) := by
+    simp only [applyOp, hop, hm]
+  rw [happ]
+  by_cases hgt : (stp.replicas.getD 0) > m.replicas
+  · rw [if_pos hgt] at hsn ⊢
+    obtain ⟨P, hsame, hlen, hP⟩ := newPods_spec _ stp.deployment ((stp.replicas.getD 0) - m.replicas) _ hm1
+    have hadd := Sim.addPending hu hs1 stp.deployment P hroll1 hP
+    have hw : w' = { ({ w with fields := setField w.fields (.replicas stp.deployment) (.int (stp.replicas.getD 0)) } : World) with
+        pods := w.pods ++ List.replicate P.length ⟨stp.deployment, "Deployment", none, false⟩ } := by
+      exact World.ext' (by rw [hfw, hstep]) (by rw [hsn, hlen]) hro'
+    rw [hw]
+    exact (hadd.congr hsame).congr (SameUpTo.place _ _)
+  · rw [if_neg hgt] at hsn ⊢
+    by_cases hlt : (stp.replicas.getD 0) < m.replicas
+    · rw [if_pos hlt] at hsn ⊢
+      obtain ⟨keep, drop, hperm, hdrop, hlen, hfirst, hpk⟩ := hsn
+      exact Sim.scaleDown hs1 stp.deployment (stp.replicas.getD 0) hroll1 hdne keep drop hperm hdrop hlen hfirst
+        (World.ext' (by rw [hfw, hstep]) hpk hro')
+    · rw [if_neg hlt] at hsn ⊢
+      have hw : w' = { w with fields := setField w.fields (.replicas stp.deployment) (.int (stp.replicas.getD 0)) } := by
+        exact World.ext' (by rw [hfw, hstep]) hsn hro'
+      rw [hw]; exact hs1
+
 end Planproof
