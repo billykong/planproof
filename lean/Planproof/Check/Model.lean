@@ -186,18 +186,27 @@ def setAt (st : State) (names : List String) (n : String) : State :=
 /-- Pod order for first-fit-decreasing: CPU request, largest first, then name. -/
 def podBefore (a b : MPod) : Bool := decide (a.req.cpu > b.req.cpu) || (a.req.cpu == b.req.cpu && strLe a.name b.name)
 
+/-- Charge the pod at position `i` to node `n`. -/
+def setIdx : List MPod → Nat → String → List MPod
+  | [], _, _ => []
+  | p :: ps, 0, n => { p with atNode := n } :: ps
+  | p :: ps, k + 1, n => p :: setIdx ps k n
+
+def setAtIdx (st : State) (i : Nat) (n : String) : State := { st with pods := setIdx st.pods i n }
+
 /-- First-fit-decreasing (spec 02): returns the new state and the first pod
-that fits nowhere, if any. -/
+that fits nowhere, if any. Pods are charged by position, as the Go kernel
+charges them by pointer. -/
 def place (st : State) (names : List String) : State × Option MPod :=
   let st := st.setAt names ""
-  let order := (st.pods.filter fun p => names.contains p.name).mergeSort podBefore
-  order.foldl (init := (st, none)) fun (st, bad) p =>
+  let order := (st.pods.zipIdx.filter fun x => names.contains x.1.name).mergeSort fun a b => podBefore a.1 b.1
+  order.foldl (init := (st, none)) fun (st, bad) x =>
     match bad with
     | some _ => (st, bad)
     | none =>
-      match p.nodes.find? (st.fits p) with
-      | some n => (st.setAt [p.name] n, none)
-      | none => (st, some p)
+      match x.1.nodes.find? (st.fits x.1) with
+      | some n => (st.setAtIdx x.2 n, none)
+      | none => (st, some x.1)
 
 def remove (st : State) (names : List String) : State :=
   { st with pods := st.pods.filter fun p => !names.contains p.name }

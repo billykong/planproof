@@ -60,21 +60,42 @@ theorem State.field_updPods (st : State) (sel : MPod → Bool) (f : MPod → MPo
 theorem State.deps_setAt (st : State) (names : List String) (n : String) : (st.setAt names n).deps = st.deps := rfl
 theorem State.nodes_setAt (st : State) (names : List String) (n : String) : (st.setAt names n).nodes = st.nodes := rfl
 
-theorem State.deps_place (st : State) (names : List String) : (st.place names).1.deps = st.deps := by
+/-- Forget where first fit charged a pod. -/
+def MPod.unplace (p : MPod) : MPod := { p with atNode := "" }
+
+theorem setIdx_unplace (ps : List MPod) (i : Nat) (n : String) :
+    (State.setIdx ps i n).map MPod.unplace = ps.map MPod.unplace := by
+  induction ps generalizing i with
+  | nil => rfl
+  | cons p ps ih =>
+    cases i with
+    | zero => rfl
+    | succ k => simp only [State.setIdx, List.map_cons, ih]
+
+/-- First fit changes only where pods are charged. -/
+theorem State.place_shape (st : State) (names : List String) :
+    ∃ ps, (st.place names).1 = { st with pods := ps } ∧ ps.map MPod.unplace = st.pods.map MPod.unplace := by
   unfold State.place
   simp only
   generalize (List.filter _ _).mergeSort _ = order
-  suffices h : ∀ (acc : State × Option MPod), acc.1.deps = st.deps →
-      (order.foldl (fun (x : State × Option MPod) p =>
+  suffices h : ∀ (acc : State × Option MPod), (∃ ps, acc.1 = { st with pods := ps } ∧ ps.map MPod.unplace = st.pods.map MPod.unplace) →
+      ∃ ps, (order.foldl (fun (x : State × Option MPod) y =>
         match x with
         | (st, bad) => match bad with
           | some _ => (st, bad)
-          | none => match p.nodes.find? (st.fits p) with
-            | some n => (st.setAt [p.name] n, none)
-            | none => (st, some p)) acc).1.deps = st.deps from h _ rfl
+          | none => match y.1.nodes.find? (st.fits y.1) with
+            | some n => (st.setAtIdx y.2 n, none)
+            | none => (st, some y.1)) acc).1 = { st with pods := ps } ∧ ps.map MPod.unplace = st.pods.map MPod.unplace by
+    apply h
+    refine ⟨_, rfl, ?_⟩
+    simp only [List.map_map]
+    apply List.map_congr_left
+    intro p _
+    simp only [Function.comp]
+    split <;> rfl
   induction order with
   | nil => intro acc h; exact h
-  | cons p rest ih =>
+  | cons y rest ih =>
     intro acc h
     apply ih
     obtain ⟨s1, bad⟩ := acc
@@ -82,31 +103,18 @@ theorem State.deps_place (st : State) (names : List String) : (st.place names).1
     | some _ => exact h
     | none =>
       simp only
-      split <;> simp_all [State.deps_setAt]
+      split
+      · obtain ⟨ps, hps, hm⟩ := h
+        simp only at hps
+        subst hps
+        exact ⟨_, rfl, (setIdx_unplace _ _ _).trans hm⟩
+      · exact h
+
+theorem State.deps_place (st : State) (names : List String) : (st.place names).1.deps = st.deps := by
+  obtain ⟨ps, h, -⟩ := st.place_shape names; rw [h]
 
 theorem State.nodes_place (st : State) (names : List String) : (st.place names).1.nodes = st.nodes := by
-  unfold State.place
-  simp only
-  generalize (List.filter _ _).mergeSort _ = order
-  suffices h : ∀ (acc : State × Option MPod), acc.1.nodes = st.nodes →
-      (order.foldl (fun (x : State × Option MPod) p =>
-        match x with
-        | (st, bad) => match bad with
-          | some _ => (st, bad)
-          | none => match p.nodes.find? (st.fits p) with
-            | some n => (st.setAt [p.name] n, none)
-            | none => (st, some p)) acc).1.nodes = st.nodes from h _ rfl
-  induction order with
-  | nil => intro acc h; exact h
-  | cons p rest ih =>
-    intro acc h
-    apply ih
-    obtain ⟨s1, bad⟩ := acc
-    cases bad with
-    | some _ => exact h
-    | none =>
-      simp only
-      split <;> simp_all [State.nodes_setAt]
+  obtain ⟨ps, h, -⟩ := st.place_shape names; rw [h]
 
 theorem State.field_place (st : State) (names : List String) : (st.place names).1.field = st.field :=
   State.field_congr (State.deps_place st names) (State.nodes_place st names)

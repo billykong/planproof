@@ -103,30 +103,7 @@ theorem floors_build (snap : Snapshot) : FloorsOK (build snap) := by
 /-! ## Budgets never change -/
 
 theorem State.pdbs_place (st : State) (names : List String) : (st.place names).1.pdbs = st.pdbs := by
-  unfold State.place
-  simp only
-  generalize (List.filter _ _).mergeSort _ = order
-  suffices h : ∀ (acc : State × Option MPod), acc.1.pdbs = st.pdbs →
-      (order.foldl (fun (x : State × Option MPod) p =>
-        match x with
-        | (st, bad) => match bad with
-          | some _ => (st, bad)
-          | none => match p.nodes.find? (st.fits p) with
-            | some n => (st.setAt [p.name] n, none)
-            | none => (st, some p)) acc).1.pdbs = st.pdbs from h _ rfl
-  induction order with
-  | nil => intro acc h; exact h
-  | cons p rest ih =>
-    intro acc h
-    apply ih
-    obtain ⟨s1, bad⟩ := acc
-    cases bad with
-    | some _ => exact h
-    | none =>
-      simp only
-      split
-      · exact h
-      · exact h
+  obtain ⟨ps, h, -⟩ := st.place_shape names; rw [h]
 
 theorem State.pdbs_newPods (st : State) (d : String) (k : Int) : (st.newPods d k).1.pdbs = st.pdbs := by
   unfold State.newPods; split <;> rfl

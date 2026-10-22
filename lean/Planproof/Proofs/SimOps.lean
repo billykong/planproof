@@ -200,30 +200,12 @@ theorem SameUpTo.setAt (st : State) (names : List String) (n : String) : SameUpT
   split <;> rfl
 
 theorem SameUpTo.place (st : State) (names : List String) : SameUpTo st (st.place names).1 := by
-  unfold State.place
-  simp only
-  generalize (List.filter _ _).mergeSort _ = order
-  have h0 := SameUpTo.setAt st names ""
-  suffices h : ∀ (acc : State × Option MPod), SameUpTo st acc.1 →
-      SameUpTo st (order.foldl (fun (x : State × Option MPod) p =>
-        match x with
-        | (st, bad) => match bad with
-          | some _ => (st, bad)
-          | none => match p.nodes.find? (st.fits p) with
-            | some n => (st.setAt [p.name] n, none)
-            | none => (st, some p)) acc).1 from h _ h0
-  induction order with
-  | nil => intro acc h; exact h
-  | cons p rest ih =>
-    intro acc h
-    apply ih
-    obtain ⟨s1, bad⟩ := acc
-    cases bad with
-    | some _ => exact h
-    | none =>
-      simp only
-      split
-      · exact h.trans (SameUpTo.setAt _ _ _)
-      · exact h
+  obtain ⟨ps, h, hm⟩ := st.place_shape names
+  rw [h]
+  refine ⟨rfl, rfl, ?_⟩
+  have e : ∀ l : List MPod, l.map MPod.strip = (l.map MPod.unplace).map MPod.strip := by
+    intro l; rw [List.map_map]; rfl
+  show ps.map MPod.strip = st.pods.map MPod.strip
+  rw [e ps, e st.pods, hm]
 
 end Planproof
