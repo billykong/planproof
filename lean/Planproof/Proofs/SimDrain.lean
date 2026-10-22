@@ -192,7 +192,7 @@ theorem Sim.drain {s : Snapshot} {st : State} {w w' : World} {stp : Step} (hu : 
               simp only [sel, Bool.and_eq_true, bne_iff_ne, ne_eq] at this
               exact this.1
             have := hs.owner p hpst hdne
-            rw [← h2, hds] at this; cases this
+            rw [← h2, hds] at this; exact absurd this (by decide)
           · simp [upd, mem_compact, mem_sortStrings, h4, hmn]
         | none =>
           rw [hqn] at h4
@@ -243,13 +243,11 @@ theorem Sim.drain {s : Snapshot} {st : State} {w w' : World} {stp : Step} (hu : 
               omega
         · exact hfl
       refine ⟨m, ?_, hfloor, ?_, ?_, ?_, ?_⟩
-      · show (st1.updNode stp.node _).dep? d = some m
-        rfl
+      · exact hm
       · rw [← hr']; split <;> exact hold'
       · intro p hp hpd hpg
-        simp only [State.updNode] at hp
-        simp only [st1, State.updPods, List.mem_map] at hp
-        obtain ⟨p0, hp0, rfl⟩ := hp
+        have hp' : p ∈ st.pods.map (fun p => if sel p then upd p else p) := hp
+        obtain ⟨p0, hp0, rfl⟩ := List.mem_map.mp hp'
         have hd0 : p0.dep = d := by split at hpd <;> simpa [upd] using hpd
         have hg0 : p0.gone = false := by split at hpg <;> simpa [upd] using hpg
         have hs0 := hsel_roll p0 hp0 hg0 (by rw [hd0]; exact hrolling)
@@ -267,8 +265,8 @@ theorem Sim.drain {s : Snapshot} {st : State} {w w' : World} {stp : Step} (hu : 
         split <;> rfl
       · rw [hrep]; exact hmax
   · intro p hp hd
-    simp only [State.updNode, st1, State.updPods, List.mem_map] at hp
-    obtain ⟨p0, hp0, rfl⟩ := hp
+    have hp' : p ∈ st.pods.map (fun p => if sel p then upd p else p) := hp
+    obtain ⟨p0, hp0, rfl⟩ := List.mem_map.mp hp'
     have : p0.dep ≠ "" := by split at hd <;> simpa [upd] using hd
     have ho := hs.owner p0 hp0 this
     split <;> simpa [upd] using ho
