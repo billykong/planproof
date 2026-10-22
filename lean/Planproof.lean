@@ -14,3 +14,4 @@ import Planproof.Proofs.SimOps
 import Planproof.Proofs.SimNodes
 import Planproof.Proofs.SimDrain
 import Planproof.Proofs.SimScale
+import Planproof.Proofs.SimRollout
