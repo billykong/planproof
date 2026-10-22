@@ -14,7 +14,7 @@ namespace Planproof
 
 open Spec
 
-theorem Forall2.exists_of_mem_right {α β : Type} {R : α → β → Prop} {L : List α} {al : List β}
+theorem forall2_exists_of_mem_right {α β : Type} {R : α → β → Prop} {L : List α} {al : List β}
     (h : Forall2 R L al) {b : β} (hb : b ∈ al) : ∃ a ∈ L, R a b := by
   induction h with
   | nil => cases hb
@@ -337,6 +337,259 @@ theorem Sim.addPending {s : Snapshot} {st : State} {w : World} (hu : NodesUnique
     rcases List.mem_append.mp hp with hp | hp
     · exact hs.owner p hp hd
     · exact (hP p hp).2.1
+  · exact hs.nodes
+
+/-! ## Scaling down -/
+
+theorem filter_eq_of_forall2 {R : MPod → MPod → Prop} {A B : List MPod} (h : Forall2 R A B) (q : MPod → Bool)
+    (hq : ∀ a b, R a b → q a = q b ∧ (q a = true → b = a)) : B.filter q = A.filter q := by
+  induction h with
+  | nil => rfl
+  | @cons a b _ _ hab _ ih =>
+    obtain ⟨h1, h2⟩ := hq a b hab
+    simp only [List.filter_cons, ← h1]
+    split
+    · rename_i hqa; rw [h2 hqa, ih]
+    · exact ih
+
+theorem length_filter_eq_of_forall2 {R : MPod → MPod → Prop} {A B : List MPod} (h : Forall2 R A B) (q : MPod → Bool)
+    (hq : ∀ a b, R a b → q a = q b) : (B.filter q).length = (A.filter q).length := by
+  induction h with
+  | nil => rfl
+  | @cons a b _ _ hab _ ih =>
+    simp only [List.filter_cons, hq a b hab]
+    split <;> simp [ih]
+
+theorem mem_U {st : State} {d : String} {p : MPod} (hp : p ∈ st.pods) (hd : p.dep = d) (hg : p.gone = false)
+    {m : String} (hm : m ∈ p.nodes) : m ∈ compact (sortStrings ((st.podsOf d).flatMap (·.nodes))) := by
+  rw [mem_compact, mem_sortStrings, List.mem_flatMap]
+  exact ⟨p, List.mem_filter.mpr ⟨hp, by simp [hd, hg]⟩, hm⟩
+
+/-- Scaling down a deployment that isn't mid rollout: Kubernetes removes
+`drop` (pods that aren't ready first), the checker drops its own choice;
+the kept pods pair up again. -/
+theorem Sim.scaleDown {s : Snapshot} {st : State} {w w' : World} (hs : Sim s st w) (d : String) (n : Int)
+    (hroll : st.rolling d = false) (hdne : d ≠ "")
+    (keep drop : List CPod) (hperm : w.pods.Perm (keep ++ drop)) (hdrop : ∀ p ∈ drop, p.dep = d)
+    (hlen : drop.length = (w.pods.filter (·.dep == d)).length - n.toNat)
+    (hfirst : (∃ p ∈ drop, p.ready = true) → ∀ p ∈ keep, p.dep = d → p.ready = true)
+    (hw : w' = { w with pods := keep }) :
+    Sim s (st.scaleDown d n) w' := by
+  subst hw
+  -- The checker's side.
+  let A := st.pods
+  let U := compact (sortStrings ((st.podsOf d).flatMap (·.nodes)))
+  let K := (st.podsOf d).length
+  let NRc := ((st.podsOf d).filter (!·.ready)).length
+  let NR := (A.filter fun p => isD d p && !p.ready).length
+  let RR := (A.filter fun p => isD d p && p.ready).length
+  let k := K - n.toNat
+  let qn := min k NRc
+  let qr := k - qn
+  have hpods : st.podsOf d = A.filter (isD d) := rfl
+  have hNR : NRc = NR := by
+    show ((A.filter (isD d)).filter (!·.ready)).length = _
+    rw [List.filter_filter]
+    congr 1
+    apply List.filter_congr
+    intro p _
+    exact Bool.and_comm _ _
+  have hsd : st.scaleDown d n = { st with pods := dropPods d U qn qr A } := rfl
+  rw [hsd]
+  let R := dropPods d U qn qr A
+  have hPW := dropPods_pointwise d U qn qr A
+  have hsplit := isD_split d A
+  obtain ⟨hcK, hcR⟩ := dropPods_counts d U qn qr A
+  have hK : K = (A.filter (isD d)).length := rfl
+  have hqn : min qn NR = qn := Nat.min_eq_left (by rw [← hNR]; exact Nat.min_le_right _ _)
+  have hqr : min qr RR = qr := by
+    apply Nat.min_eq_left
+    show k - min k NRc ≤ RR
+    rw [hNR]
+    omega
+  have hrol : ∀ e, ({ st with pods := R } : State).rolling e = st.rolling e := fun _ => rfl
+  -- The pairing before.
+  obtain ⟨al, hal, hf⟩ := hs.pods
+  have hsch : sched s ({ w with pods := keep } : World).fields = sched s w.fields := rfl
+  -- Live pods of the scaled deployment, before.
+  have hliveD : st.live.filter (fun p => p.dep == d) = A.filter (isD d) := by
+    unfold State.live
+    rw [List.filter_filter]
+    apply List.filter_congr
+    intro p _
+    cases hpd : (p.dep == d)
+    · simp [isD, hpd]
+    · have : p.dep = d := by simpa using hpd
+      subst this; simp [isD, hroll]
+  -- Real pods of the scaled deployment, before: as many as the checker's.
+  have hCd : (w.pods.filter (·.dep == d)).length = K := by
+    have h1 := (hf.filter (fun p => p.dep == d) (fun c => c.dep == d) (fun a b hm => by rw [hm.1])).length_eq
+    rw [hliveD] at h1
+    have h2 := (hal.filter (fun c => c.dep == d)).length_eq
+    show _ = (A.filter (isD d)).length
+    omega
+  have hq1 : qn ≤ k := Nat.min_le_left _ _
+  have hq2 : qr = k - qn := rfl
+  have hk : k = K - n.toNat := rfl
+  have hkeepD : (keep.filter (·.dep == d)).length + drop.length = K := by
+    have := (hperm.filter (·.dep == d)).length_eq
+    rw [List.filter_append, List.length_append] at this
+    have hd' : drop.filter (·.dep == d) = drop := List.filter_eq_self.mpr (fun p hp => by simp [hdrop p hp])
+    rw [hd'] at this
+    omega
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, hs.mu, hs.names⟩
+  · show w.fields = _
+    rw [hs.fields]; exact (State.field_congr rfl rfl).symm
+  · -- The pairing after.
+    have hLnd : ({ st with pods := R } : State).live.filter (fun p => !(p.dep == d)) = st.live.filter (fun p => !(p.dep == d)) := by
+      unfold State.live
+      rw [List.filter_filter, List.filter_filter]
+      simp only [hrol]
+      apply filter_eq_of_forall2 hPW
+      intro a b hab
+      rcases hab with ⟨ha, rfl⟩ | ⟨ha, rfl | rfl⟩
+      · exact ⟨rfl, fun _ => rfl⟩
+      · have hd : a.dep = d := by simp [isD] at ha; exact ha.1
+        constructor
+        · simp [hd]
+        · intro h; simp [hd] at h
+      · have hd : a.dep = d := by simp [isD] at ha; exact ha.1
+        constructor
+        · simp [hd]
+        · intro h; simp [hd] at h
+    have hLd : ({ st with pods := R } : State).live.filter (fun p => p.dep == d) = R.filter (isD d) := by
+      unfold State.live
+      rw [List.filter_filter]
+      apply List.filter_congr
+      intro p _
+      cases hpd : (p.dep == d)
+      · simp [isD, hpd]
+      · have : p.dep = d := by simpa using hpd
+        subst this; simp [isD, hrol, hroll]
+    -- The pods both sides keep pair up again.
+    have hX := hf.filter (fun p => !(p.dep == d)) (fun c => !(c.dep == d)) (fun a b hm => by rw [hm.1])
+    obtain ⟨bs', hbs', hY⟩ := match_exists (sched s w.fields) U d (R.filter (isD d)) (keep.filter (·.dep == d))
+      (by
+        intro a ha
+        obtain ⟨haR, haD⟩ := List.mem_filter.mp ha
+        obtain ⟨a0, ha0, hrel⟩ : ∃ a0 ∈ A, (isD d a0 = false ∧ a = a0) ∨
+            (isD d a0 = true ∧ (a = { a0 with gone := true, ready := false } ∨ a = { a0 with nodes := U })) := by
+          exact forall2_exists_of_mem_right hPW haR
+        rcases hrel with ⟨h0, rfl⟩ | ⟨h0, rfl | rfl⟩
+        · rw [h0] at haD; cases haD
+        · simp [isD] at haD
+        · have hd : a0.dep = d := by simp [isD] at h0; exact h0.1
+          exact ⟨rfl, hd, hs.owner a0 ha0 (by rw [hd]; exact hdne)⟩)
+      (by
+        intro b hb
+        obtain ⟨hbk, hbd⟩ := List.mem_filter.mp hb
+        have hbd : b.dep = d := by simpa using hbd
+        have hbw : b ∈ w.pods := hperm.mem_iff.mpr (List.mem_append_left _ hbk)
+        obtain ⟨a, hal', hm⟩ := forall2_exists_of_mem_right hf (hal.mem_iff.mpr hbw)
+        obtain ⟨hm1, hm2, -, hm4⟩ := hm
+        have had : a.dep = d := hm1.symm.trans hbd
+        have hpl := List.mem_filter.mp hal'
+        have hag : a.gone = false := by
+          have := hpl.2; simp only [Bool.and_eq_true, Bool.not_eq_true'] at this; exact this.1
+        refine ⟨hbd, hm2.trans (hs.owner a hpl.1 (by rw [had]; exact hdne)), ?_, ?_⟩
+        · intro m hn; rw [hn] at hm4; exact mem_U hpl.1 had hag hm4
+        · intro hn; rw [hn] at hm4
+          exact ⟨hm4.2.1, fun m hm => mem_U hpl.1 had hag (hm4.2.2 m hm)⟩)
+      (by
+        show _ = _
+        have : (R.filter (isD d)).length = K - qn - qr := by rw [hcK, hqn, hqr]; rfl
+        rw [this]
+        omega)
+      (by
+        have hA : ((R.filter (isD d)).filter (·.ready)).length = RR - qr := by
+          rw [List.filter_filter, ← hqr]
+          rw [← hcR]
+          congr 1
+          apply List.filter_congr
+          intro p _
+          cases p.ready <;> simp
+        rw [hA]
+        by_cases hdr : ∃ p ∈ drop, p.ready = true
+        · have hall := hfirst hdr
+          rw [List.filter_eq_self.mpr (fun p hp => hall p (List.mem_filter.mp hp).1 (by simpa using (List.mem_filter.mp hp).2))]
+          have : (R.filter (isD d)).length = K - qn - qr := by rw [hcK, hqn, hqr]; rfl
+          omega
+        · -- No ready pod went: Kubernetes kept every ready one.
+          have hnr : ∀ p ∈ drop, p.ready = false := by
+            intro p hp; cases h : p.ready
+            · rfl
+            · exact absurd ⟨p, hp, h⟩ hdr
+          have hk : ((keep.filter (·.dep == d)).filter (·.ready)).length = ((w.pods.filter (·.dep == d)).filter (·.ready)).length := by
+            have := ((hperm.filter (·.dep == d)).filter (·.ready)).length_eq
+            rw [this, List.filter_append, List.filter_append, List.length_append]
+            have : (drop.filter (·.dep == d)).filter (·.ready) = [] := by
+              rw [List.filter_eq_nil_iff]
+              intro p hp; have := hnr p (List.mem_filter.mp hp).1; simp [this]
+            rw [this]; rfl
+          rw [hk]
+          have hge : RR ≤ ((w.pods.filter (·.dep == d)).filter (·.ready)).length := by
+            have h1 := (hf.filter (fun p => p.dep == d) (fun c => c.dep == d) (fun a b hm => by rw [hm.1])).countP_le
+              (fun p => p.ready) (fun c => c.ready) (fun a b hm hr => hm.2.2.1 hr)
+            rw [hliveD] at h1
+            simp only [List.countP_eq_length_filter] at h1
+            rw [← ((hal.filter _).filter (·.ready)).length_eq]
+            have : RR = ((A.filter (isD d)).filter (·.ready)).length := by
+              show (A.filter fun p => isD d p && p.ready).length = _
+              rw [List.filter_filter]
+              congr 1
+              apply List.filter_congr
+              intro p _
+              exact Bool.and_comm _ _
+            omega
+          omega)
+    obtain ⟨zs, hzs, hZ⟩ := Forall2.weave (fun p : MPod => p.dep == d) ({ st with pods := R } : State).live
+      (al.filter fun c => !(c.dep == d)) bs' (by rw [hLnd]; exact hX) (by rw [hLd]; exact hY)
+    refine ⟨zs, ?_, by rw [hsch]; exact hZ⟩
+    -- And they are the pods Kubernetes kept.
+    have h1 : (al.filter fun c => !(c.dep == d)).Perm (keep.filter fun c => !(c.dep == d)) := by
+      have := (hal.trans hperm).filter (fun c => !(c.dep == d))
+      rw [List.filter_append] at this
+      have hd' : drop.filter (fun c => !(c.dep == d)) = [] := by
+        rw [List.filter_eq_nil_iff]; intro p hp; simp [hdrop p hp]
+      rw [hd', List.append_nil] at this
+      exact this
+    exact hzs.trans ((h1.append hbs').trans (List.perm_append_comm.trans (List.filter_append_perm _ _)))
+  · intro e; rw [hrol]; exact hs.rollIff e
+  · intro e r hr
+    have hrw : w.rollout? e = some r := hr
+    obtain ⟨m, hm, h1, h2, h3, h4, h5⟩ := hs.roll e r hrw
+    have hed : e ≠ d := by
+      intro h; subst h
+      have := hs.rollIff e
+      rw [hrw, hroll] at this; cases this
+    refine ⟨m, hm, h1, h2, ?_, ?_, h5⟩
+    · intro p hp hpd hpg
+      obtain ⟨a0, ha0, hrel⟩ : ∃ a0 ∈ A, (isD d a0 = false ∧ p = a0) ∨
+          (isD d a0 = true ∧ (p = { a0 with gone := true, ready := false } ∨ p = { a0 with nodes := U })) := by
+        exact forall2_exists_of_mem_right hPW hp
+      rcases hrel with ⟨-, rfl⟩ | ⟨h0, rfl | rfl⟩
+      · exact h3 p ha0 hpd hpg
+      · have hd : a0.dep = d := by simp [isD] at h0; exact h0.1
+        exact absurd (hpd.symm.trans hd) hed
+      · have hd : a0.dep = d := by simp [isD] at h0; exact h0.1
+        exact absurd (hpd.symm.trans hd) hed
+    · show (R.filter _).length = _
+      rw [length_filter_eq_of_forall2 hPW]
+      · exact h4
+      · intro a b hab
+        rcases hab with ⟨-, rfl⟩ | ⟨h0, rfl | rfl⟩
+        · rfl
+        · have hd : a.dep = d := by simp [isD] at h0; exact h0.1
+          simp [hd, Ne.symm hed]
+        · rfl
+  · intro p hp hd
+    obtain ⟨a0, ha0, hrel⟩ : ∃ a0 ∈ A, (isD d a0 = false ∧ p = a0) ∨
+        (isD d a0 = true ∧ (p = { a0 with gone := true, ready := false } ∨ p = { a0 with nodes := U })) := by
+      exact forall2_exists_of_mem_right hPW hp
+    rcases hrel with ⟨-, rfl⟩ | ⟨-, rfl | rfl⟩
+    · exact hs.owner _ ha0 hd
+    · exact hs.owner a0 ha0 hd
+    · exact hs.owner a0 ha0 hd
   · exact hs.nodes
 
 end Planproof
