@@ -209,4 +209,9 @@ node and deployment names are unique, and `maxUnavailable` isn't negative. -/
 def Valid (s : Snapshot) : Prop :=
   NodesUnique s ∧ (s.deployments.map depName).Nodup ∧ ∀ d ∈ s.deployments, d.maxUnavail ≥ 0
 
+/-- What the Go kernel's validation guarantees of a plan and this theorem
+relies on: every scale, set-image and rollout-restart names a deployment. -/
+def StepsNamed (p : Plan) : Prop :=
+  ∀ st ∈ allSteps p, (st.op = "scale" ∨ st.op = "set-image" ∨ st.op = "rollout-restart") → st.deployment ≠ ""
+
 end Planproof.Spec

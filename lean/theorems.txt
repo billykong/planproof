@@ -2,3 +2,4 @@
 Planproof.frame_sound
 Planproof.cordon_first_sound
 Planproof.limits_sound
+Planproof.availability_sound

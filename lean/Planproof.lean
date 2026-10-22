@@ -16,3 +16,4 @@ import Planproof.Proofs.SimDrain
 import Planproof.Proofs.SimScale
 import Planproof.Proofs.SimRollout
 import Planproof.Proofs.SimWait
+import Planproof.Proofs.Safety
