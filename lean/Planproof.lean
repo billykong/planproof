@@ -17,3 +17,5 @@ import Planproof.Proofs.SimScale
 import Planproof.Proofs.SimRollout
 import Planproof.Proofs.SimWait
 import Planproof.Proofs.Safety
+import Planproof.Proofs.Capacity
+import Planproof.Proofs.Sound

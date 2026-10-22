@@ -327,7 +327,7 @@ theorem sim_initial (snap : Snapshot) (hv : Valid snap) : Sim snap (build snap) 
     · rename_i h; simpa using h
     · exact absurd rfl hd
   nodes := nodeKeys_build snap
-  mu := build_mu snap hv.2.2
+  mu := build_mu snap hv.2.2.1
   names := by
     intro m hm
     obtain ⟨d, -, he⟩ := build_names snap m hm

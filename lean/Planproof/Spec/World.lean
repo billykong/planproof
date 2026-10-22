@@ -204,10 +204,15 @@ really run.** -/
 def AvailabilitySafe (s : Snapshot) (p : Plan) (pol : Policy) : Prop :=
   ∀ ws, Runs s (World.initial s) (allSteps p) ws → ∀ w ∈ ws, BudgetOK s w ∧ NeverZero s p pol w
 
-/-- What the Go kernel's validation guarantees and this theorem relies on:
-node and deployment names are unique, and `maxUnavailable` isn't negative. -/
+/-- No resource request is negative. -/
+def ReqNonNeg (r : Res) : Prop := 0 ≤ r.cpu ∧ 0 ≤ r.mem ∧ 0 ≤ r.pods
+
+/-- What the Go kernel's validation guarantees and the theorems rely on:
+node and deployment names are unique, and neither `maxUnavailable` nor any
+resource request is negative. -/
 def Valid (s : Snapshot) : Prop :=
-  NodesUnique s ∧ (s.deployments.map depName).Nodup ∧ ∀ d ∈ s.deployments, d.maxUnavail ≥ 0
+  NodesUnique s ∧ (s.deployments.map depName).Nodup ∧ (∀ d ∈ s.deployments, d.maxUnavail ≥ 0) ∧
+  (∀ p ∈ s.pods, ReqNonNeg p.req) ∧ ∀ d ∈ s.deployments, ReqNonNeg d.req
 
 /-- What the Go kernel's validation guarantees of a plan and this theorem
 relies on: every scale, set-image and rollout-restart names a deployment. -/
