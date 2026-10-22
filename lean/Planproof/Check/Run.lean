@@ -132,6 +132,17 @@ def eachStateFails (c : Ctx) (st : State) : List String :=
 
 /-! ## Operations (spec 03) -/
 
+/-- Walk the pods, dropping `qn` that aren't ready and `qr` that are, of
+deployment `d`, in list order; the pods it keeps may be anywhere in `U`. -/
+def dropPods (d : String) (U : List String) : Nat → Nat → List MPod → List MPod
+  | _, _, [] => []
+  | qn, qr, p :: ps =>
+    if p.dep == d && !p.gone then
+      if !p.ready && qn > 0 then { p with gone := true, ready := false } :: dropPods d U (qn - 1) qr ps
+      else if p.ready && qr > 0 then { p with gone := true, ready := false } :: dropPods d U qn (qr - 1) ps
+      else { p with nodes := U } :: dropPods d U qn qr ps
+    else p :: dropPods d U qn qr ps
+
 /-- Scale a deployment down to `n`: pods that aren't ready go first, then
 ready ones, each in list order (the Go kernel's stable sort); the rest may
 be anywhere any of its pods was. -/
@@ -140,16 +151,7 @@ def State.scaleDown (st : State) (d : String) (n : Int) : State :=
   let k := pods.length - n.toNat
   let notReady := (pods.filter (!·.ready)).length
   let wher := compact (sortStrings (pods.flatMap (·.nodes)))
-  -- Walk the pods with what is still to drop of each kind.
-  let step := fun (acc : List MPod × Nat × Nat) (p : MPod) =>
-    let (out, qn, qr) := acc
-    if p.dep == d && !p.gone then
-      if !p.ready && qn > 0 then (out ++ [{ p with gone := true, ready := false }], qn - 1, qr)
-      else if p.ready && qr > 0 then (out ++ [{ p with gone := true, ready := false }], qn, qr - 1)
-      else (out ++ [{ p with nodes := wher }], qn, qr)
-    else (out ++ [p], qn, qr)
-  let (pods', _, _) := st.pods.foldl step ([], min k notReady, k - min k notReady)
-  { st with pods := pods' }
+  { st with pods := dropPods d wher (min k notReady) (k - min k notReady) st.pods }
 
 /-- A rolling update's surge pods must fit on top of the existing ones
 (none for `Recreate`). The surge pods are removed again. -/
