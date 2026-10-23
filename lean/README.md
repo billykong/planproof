@@ -4,7 +4,7 @@ A Lean 4 model of the planproof kernel, a checker written in Lean, and proofs th
 
 ## What is proved
 
-One theorem, `Planproof.sound` in [Proofs/Sound.lean](Planproof/Proofs/Sound.lean), the five below together. Each holds for every snapshot, plan and policy, not just the ones tested.
+One theorem, `Planproof.sound` in [Proofs/Sound.lean](Planproof/Proofs/Sound.lean), the five properties below together, covering six of the 13 rules (`budget` and `never-zero` share one). Each holds for every snapshot, plan and policy, not just the ones tested.
 
 ```lean
 theorem sound (snap : Snapshot) (plan : Plan) (pol : Policy) (hv : Valid snap) (hn : StepsNamed plan)
@@ -41,7 +41,7 @@ To trust the theorem you read its statement and the definitions it uses, not the
 
 - **The Go kernel.** The theorems are about the Lean checker. The Go kernel, which the CLI runs, is linked to it by tests, not proofs: `make lean` runs both on 305 inputs (the case table, the examples, every evals plan and agent run) and on 10,000 generated plans, and fails on any difference in result, failing rules, Unknown trigger or approval reasons ([internal/leandiff](../internal/leandiff)).
 - **The model.** A proof about a wrong model is still a proof about a wrong model. That `World` and `Next` match real Kubernetes is tested on a kind cluster ([results/kind-test.txt](../results/kind-test.txt)), not proved. Like the kernel, the model takes ready pods to stay ready and nothing else to change the objects during the plan (the packet's assumptions A1 and A4), and only counts runs in which every wait ends; a wait that times out stops the plan.
-- **The other rules.** `scope`, `protected`, the static `limits`, `assertions`, `no-orphans`, `settled`, `rollback` and the Unknown triggers are in the Lean checker and covered by the agreement tests, but have no proofs.
+- **The other rules.** `scope`, `protected`, the static half of `limits`, `assertions`, `no-orphans`, `settled` and `rollback` are in the Lean checker and covered by the agreement tests, but have no proofs (`input`, parsing, is Go's alone). The proved rules do hold through the rollback's steps; what isn't proved is that the rollback restores the goal. The Unknown triggers the proofs depend on are checked as part of them; the others are tested only.
 - **The capacity witness.** `capacity_sound` says the checker's own placement fits. The real scheduler may place pods elsewhere; that a placement exists is what the rule promises.
 - **Validation.** `planproof-lean` reads only inputs the Go kernel accepted, and the theorem assumes what that validation ensures: unique node and deployment names, no negative `maxUnavailable` or resource request (`Valid`), and a deployment named in every scale, set-image and rollout-restart (`StepsNamed`).
 
