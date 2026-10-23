@@ -80,22 +80,22 @@ module.exports = { shorts: {
   // proved in Lean. Its idea is the same one, a level down.
   'proved': { title: '10,000 tests missed it. Writing it down didn’t.', scenes: [
     { id: 'hook', visual: { type: 'hook', lines: ['10,000 tests passed.'], kicker: 'Three bugs left.', verdict: 'PROVED' }, beats: [
-      { say: 'A small checker for AI-written change plans. Ten thousand generated test plans found nothing. It still approved three plans that could take a service down to zero.' },
+      { say: 'Ten thousand generated test plans passed. The checker still approved three plans that could take a service down to zero.' },
     ] },
-    { id: 'bug', visual: { type: 'statement', label: 'ONE OF THEM', lines: [
-      'The checker: a pod on a drained node moves somewhere safe.',
-      'Kubernetes: it may sit on the next node drained.',
+    { id: 'odds', visual: { type: 'numbers', label: 'A BUG IN 1 OF 10,000 PLANS', stats: [
+      ['37%', '10,000 passing tests miss it', 'amber'],
+      ['63%', 'it strikes at least once in 10,000 real plans', 'amber'],
     ] }, beats: [
-      { show: 1, say: 'One example. When a node is drained, the checker assumed a pod that might be on it moved somewhere safe.' },
-      { show: 2, say: 'But the pod could have been on another node all along: the very node the plan drained next.' },
+      { show: 1, say: 'Do the maths. A bug that strikes once in ten thousand plans slips past ten thousand tests thirty-seven percent of the time.' },
+      { show: 2, say: 'Then, in ten thousand real plans, it strikes at least once, sixty-three percent of the time.' },
     ] },
     { id: 'found', visual: { type: 'statement', label: 'WHAT FOUND THEM', lines: [
       'Not more tests.',
       'Writing down exactly what Kubernetes may do.',
       'Then a proof, for every plan.',
     ] }, beats: [
-      { show: 2, say: 'What found all three wasn’t more tests. It was writing down, precisely, what Kubernetes may do at each step.' },
-      { show: 3, say: 'Then proving in Lean that the checker is never too optimistic. Not for ten thousand plans. For every plan.' },
+      { show: 2, say: 'What found all three wasn’t more tests. It was writing down exactly what Kubernetes may do.' },
+      { show: 3, say: 'Then proving in Lean that the checker is never too optimistic. For every plan, not a sample.' },
     ] },
     ...close('The proofs? An AI drafted them. I didn’t need to trust it: Lean checks every step, and refuses a wrong one.', {
       lines: ['An AI drafted the proofs.', 'Lean checked every step.'],
