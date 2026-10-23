@@ -1,10 +1,10 @@
 # The video and Shorts
 
-A narrated video of the blog post (planproof is a demo of how such a check can work, not a production system), [Don't trust the AI's plan. Trust a checker small enough to read.](https://billykong.github.io/planproof/), about 11 minutes at 1920x1080, published at https://youtu.be/7fQ-RVWXN7E, and three Shorts (1080x1920, under a minute each) cut from the same script and captures. Same pipeline as the [safe-ops-agent-k8s video](https://github.com/billykong/safe-ops-agent-k8s/tree/main/video).
+A narrated video of the blog post (planproof is a demo of how such a check can work, not a production system), [Don't trust the AI's plan. Trust a checker small enough to read.](https://billykong.github.io/planproof/), about 11 minutes at 1920x1080, published at https://youtu.be/7fQ-RVWXN7E, and three Shorts (1080x1920, under a minute each) cut from the same script and captures. A fourth Short, `proved`, is for the second post, [From tested to proved](https://billykong.github.io/planproof-lean/) (the Lean proofs). Same pipeline as the [safe-ops-agent-k8s video](https://github.com/billykong/safe-ops-agent-k8s/tree/main/video).
 
 ```bash
 video/build.sh                  # writes video/out/<name>/<name>.mp4 and captions.srt, for the video and each Short
-ONLY=video video/build.sh       # just one (video, looks-fine, wrong-goal or reviewers)
+ONLY=video video/build.sh       # just one (video, looks-fine, wrong-goal, reviewers or proved)
 ```
 
 The first run installs its tools under `video/out/tools` (resvg-js and ffmpeg-static from npm, [Kokoro](https://github.com/thewh1teagle/kokoro-onnx) in a uv venv, and Kokoro's model files, about 350 MB); `TOOLS_DIR` points it at an existing copy. Nothing needs a GPU or a network service after that. `VOICE=bm_george` picks another Kokoro voice.
@@ -12,7 +12,7 @@ The first run installs its tools under `video/out/tools` (resvg-js and ffmpeg-st
 | File | What it is |
 | --- | --- |
 | `scenes.js` | The video's script: each beat's narration and what's on screen |
-| `shorts.js` | The three Shorts, in the same format |
+| `shorts.js` | The four Shorts, in the same format |
 | `captures/` | Real `planproof` output, trimmed to fit the screen |
 | `tts.py` | Narrates each beat; writes the timings and captions |
 | `render.js` | Draws each frame (SVG, rendered with resvg), 16:9 or 9:16, and times them to the narration |

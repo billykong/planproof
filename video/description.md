@@ -57,3 +57,21 @@ Each Short argues the idea, not the tool: don't trust the AI's plan, trust a che
     Write-up: https://billykong.github.io/planproof/
     The examples come from planproof, a small demo I built to try the idea, not a product: https://github.com/billykong/planproof
     Script drafted with AI and checked by me; AI voice; all checker output is from real runs.
+
+## The Lean Short
+
+For the second post, [From tested to proved](https://billykong.github.io/planproof-lean/). The same idea a level down: the checker's proofs were drafted by an AI and checked by Lean.
+
+**File:** `out/short-proved/short-proved.mp4` (0:57, 1080x1920). **Related video:** the main video. **Altered or synthetic content:** Yes (AI voice).
+
+**Title:**
+
+    10,000 tests missed it. Writing it down didn't. #shorts
+
+**Description:**
+
+    10,000 generated test plans found nothing; writing down exactly what Kubernetes may do, then proving it in Lean, found three bugs. The proofs were drafted by an AI and checked by Lean. Don't trust the AI. Trust the checker.
+    Write-up: https://billykong.github.io/planproof-lean/
+    What is proved, and what isn't: https://github.com/billykong/planproof/blob/main/lean/README.md
+    It proves a model of Kubernetes, not Kubernetes. The examples come from planproof, a small demo I built to try the idea, not a product: https://github.com/billykong/planproof
+    Script drafted with AI and checked by me; AI voice.

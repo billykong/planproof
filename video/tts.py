@@ -34,6 +34,7 @@ SAY = {
     "LCF": "L-C-F",
     "n1": "N one",
     "n2": "N two",
+    "10,000": "ten thousand",
     "247": "two hundred and forty-seven",
     "2017": "twenty seventeen",
     "1972": "nineteen seventy-two",

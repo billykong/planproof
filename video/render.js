@@ -230,18 +230,20 @@ const V = {
     return frame(s);
   },
 
-  end() {
+  // A Short's end card: its idea, links, and how it was made (each Short
+  // may override them; the defaults are the first post's).
+  end(v = {}) {
     const cw = SHORT ? W - 2 * X : 1100;
     const card = (y, k, v) => `<rect x="${X}" y="${y}" width="${cw}" height="130" rx="18" fill="${C.box}" stroke="${C.teal}" stroke-width="3"/>`
       + t(X + 40, y + 52, k, 26, C.teal, mono, 700, 'letter-spacing="3"') + t(X + 40, y + 100, v, SHORT ? 34 : 38, C.fg, mono, 700);
     if (SHORT) {
+      const cards = v.cards || [['THE WRITE-UP', 'billykong.github.io/planproof'], ['THE FULL VIDEO', 'linked below'],
+        ['A SMALL DEMO · NOT A PRODUCT', 'github.com/billykong/planproof']];
+      const notes = v.notes || ['Scripted with AI; AI voice.', 'All checker output is from real runs.'];
       return frame(label('THE IDEA')
-        + lines(X, 420, 'Trust a checker small enough to read', W - 2 * X, 64, C.fg, 700).svg
-        + card(660, 'THE WRITE-UP', 'billykong.github.io/planproof')
-        + card(830, 'THE FULL VIDEO', 'linked below')
-        + card(1000, 'A SMALL DEMO · NOT A PRODUCT', 'github.com/billykong/planproof')
-        + t(X, 1240, 'Scripted with AI; AI voice.', 34, C.muted)
-        + t(X, 1290, 'All checker output is from real runs.', 34, C.muted));
+        + lines(X, 420, v.idea || 'Trust a checker small enough to read', W - 2 * X, 64, C.fg, 700).svg
+        + cards.map(([k, val], i) => card(660 + i * 170, k, val)).join('')
+        + notes.map((n, i) => t(X, 1240 + i * 50, n, 34, C.muted)).join(''));
     }
     return frame(label('THANKS FOR WATCHING')
       + t(X, 260, 'The code, the tests, every result', 72, C.fg, sans, 700)
