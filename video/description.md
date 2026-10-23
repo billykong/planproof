@@ -60,6 +60,8 @@ Each Short argues the idea, not the tool: don't trust the AI's plan, trust a che
 
 ## The Lean Short
 
+Published 2026-10-23: https://www.youtube.com/shorts/hMDjRMeDX6A
+
 For the second post, [From tested to proved](https://billykong.github.io/planproof-lean/). The same idea a level down: the checker's proofs were drafted by an AI and checked by Lean.
 
 **File:** `out/short-proved/short-proved.mp4` (0:54, 1080x1920). **Related video:** the main video. **Altered or synthetic content:** Yes (AI voice).
